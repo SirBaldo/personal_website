@@ -137,11 +137,10 @@ var brailleMap = {
 };
 
 var nameStyleRegistry = [
-  { id: 0, className: 'name-style-0', render: renderPlainName },
   { id: 1, className: 'name-style-1', render: renderClaudeBlocksName },
   { id: 2, className: 'name-style-2', render: renderPlainName },
   { id: 3, className: 'name-style-3', render: renderPlainName },
-  { id: 4, className: 'name-style-4', render: renderSubtleOrbitName },
+  { id: 4, className: 'name-style-4', render: renderPlanetConstellationName },
   { id: 6, className: 'name-style-6', render: renderTelemetryName },
   { id: 7, className: 'name-style-7', render: renderMissionStampName },
   { id: 9, className: 'name-style-9', render: renderBrailleOnlyName },
@@ -176,14 +175,28 @@ function renderClaudeBlocksName() {
   });
 }
 
-function renderSubtleOrbitName() {
-  nameClick.innerHTML =
-    '<span class="orbital-core">' + NAME_TEXT + '</span>' +
-    '<span class="orbit-ring orbit-ring-1" aria-hidden="true"></span>' +
-    '<span class="orbit-ring orbit-ring-2" aria-hidden="true"></span>' +
-    '<span class="orbit-planet orbit-planet-1" aria-hidden="true"></span>' +
-    '<span class="orbit-planet orbit-planet-2" aria-hidden="true"></span>' +
-    '<span class="orbit-planet orbit-planet-3" aria-hidden="true"></span>';
+function renderPlanetConstellationName() {
+  var chars = NAME_TEXT.split('');
+  var html = '<span class="planet-constellation-core">';
+  for (var i = 0; i < chars.length; i++) {
+    var ch = chars[i];
+    if (ch === ' ') {
+      html += '<span class="name-space"></span>';
+      continue;
+    }
+    if (ch === 'o' || ch === 'a' || ch === 'd') {
+      html += '<span class="planet-glyph" data-char="' + ch + '" aria-label="' + ch + '">' + ch + '</span>';
+    } else {
+      html += '<span class="constellation-letter">' + ch + '</span>';
+    }
+  }
+  html += '</span>';
+  html += '<span class="constellation-track constellation-track-1" aria-hidden="true"></span>';
+  html += '<span class="constellation-track constellation-track-2" aria-hidden="true"></span>';
+  html += '<span class="constellation-node constellation-node-1" aria-hidden="true"></span>';
+  html += '<span class="constellation-node constellation-node-2" aria-hidden="true"></span>';
+  html += '<span class="constellation-node constellation-node-3" aria-hidden="true"></span>';
+  nameClick.innerHTML = html;
 }
 
 function renderTelemetryName() {
@@ -269,8 +282,10 @@ nameClick.addEventListener('mousedown', function(e) {
 var rocketContainer = document.getElementById('rocketContainer');
 var ignitionBtn = document.getElementById('ignitionBtn');
 var radarBtn = document.getElementById('radarBtn');
+var signalBtn = document.getElementById('signalBtn');
 var radarOverlay = document.getElementById('radarOverlay');
 var radarAnimating = false;
+var signalAnimating = false;
 
 function launchRocket() {
   rocketContainer.classList.remove('launching');
@@ -288,6 +303,9 @@ function launchRocket() {
 ignitionBtn.addEventListener('click', launchRocket);
 if (radarBtn) {
   radarBtn.addEventListener('click', launchRadarGraph);
+}
+if (signalBtn) {
+  signalBtn.addEventListener('click', launchSignal);
 }
 
 function createParticles(x, y) {
@@ -315,7 +333,7 @@ function createParticles(x, y) {
 }
 
 function launchRadarGraph() {
-  if (!radarOverlay || radarAnimating) return;
+  if (!radarOverlay || radarAnimating || signalAnimating) return;
   radarAnimating = true;
   radarOverlay.innerHTML = '';
 
@@ -535,7 +553,7 @@ var themeColorMeta = document.querySelector('meta[name="theme-color"]');
 
 var paletteMap = {
   light: ['cream', 'rose', 'sky', 'sage', 'peach', 'lavender'],
-  dark: ['charcoal', 'warm-ink', 'navy', 'forest', 'plum', 'teal']
+  dark: ['charcoal', 'warm-ink']
 };
 
 var themeMetaColors = {
@@ -775,9 +793,72 @@ var selectedIndex = 0;
 
 var urls = {
   cv: 'Baldan_Resume_update.pdf',
-  linkedin: 'YOUR_LINKEDIN_URL',
-  github: 'YOUR_GITHUB_URL'
+  linkedin: 'https://www.linkedin.com/in/fbaldan/',
+  github: 'https://github.com/SirBaldo'
 };
+
+function launchSignal() {
+  if (!radarOverlay || signalAnimating || radarAnimating) return;
+  signalAnimating = true;
+  radarOverlay.innerHTML = '';
+
+  var baseEl = document.querySelector('.status-bar') || signalBtn;
+  var baseRect = baseEl.getBoundingClientRect();
+  var centerX = Math.round(baseRect.left + baseRect.width * 0.6);
+  var centerY = Math.round(baseRect.top + baseRect.height * 0.35);
+  var rtt = 14 + Math.floor(Math.random() * 9);
+
+  if (prefersReducedMotion) {
+    var prevReduced = statusMessage.textContent;
+    statusMessage.textContent = 'UAV link stable | RL reward +0.84';
+    setTimeout(function() {
+      statusMessage.textContent = prevReduced;
+      signalAnimating = false;
+    }, 950);
+    return;
+  }
+
+  var prev = statusMessage.textContent;
+  statusMessage.textContent = 'UAV link: stable | RTT ' + rtt + 'ms';
+
+  var ping = document.createElement('div');
+  ping.className = 'signal-ping';
+  ping.style.left = centerX + 'px';
+  ping.style.top = centerY + 'px';
+  radarOverlay.appendChild(ping);
+
+  var pulse1 = document.createElement('div');
+  pulse1.className = 'signal-ring';
+  pulse1.style.left = centerX + 'px';
+  pulse1.style.top = centerY + 'px';
+  pulse1.style.animationDelay = '0s';
+  radarOverlay.appendChild(pulse1);
+
+  var pulse2 = document.createElement('div');
+  pulse2.className = 'signal-ring';
+  pulse2.style.left = centerX + 'px';
+  pulse2.style.top = centerY + 'px';
+  pulse2.style.animationDelay = '0.14s';
+  radarOverlay.appendChild(pulse2);
+
+  var rl = document.createElement('div');
+  rl.className = 'signal-rl-step';
+  rl.textContent = 'state -> action -> reward';
+  rl.style.left = Math.max(12, centerX - 130) + 'px';
+  rl.style.top = Math.max(12, centerY - 52) + 'px';
+  rl.style.animationDelay = '0.55s';
+  radarOverlay.appendChild(rl);
+
+  setTimeout(function() {
+    statusMessage.textContent = 'RL policy: converging';
+  }, 620);
+
+  setTimeout(function() {
+    radarOverlay.innerHTML = '';
+    statusMessage.textContent = prev;
+    signalAnimating = false;
+  }, 1480);
+}
 
 document.addEventListener('keydown', function(e) {
   // Cmd/Ctrl+K: open command palette
