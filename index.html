@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Federico Baldan</title>
+  <meta name="description" content="Federico Baldan - Aerospace Engineer & Computer Scientist. Portfolio, projects, and contact info.">
+  <meta name="theme-color" content="#252525">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-0">
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <button class="top-bar-btn" id="toggleBg" title="Background: dots" aria-label="Toggle background style">&#9632; bg</button>
+    <button class="top-bar-btn active" id="toggleTheme" title="Toggle dark/light mode" aria-label="Toggle dark/light theme">&#9789; theme</button>
+    <div class="dropdown-wrapper">
+      <button class="top-bar-btn" id="toggleLang" title="Change language">
+        <span id="langFlag">&#127468;&#127463;</span> <span id="langLabel">EN</span>
+      </button>
+      <div class="dropdown-menu" id="langDropdown">
+        <button class="dropdown-option active" data-lang="EN"><span class="dropdown-icon">&#127468;&#127463;</span> English</button>
+        <button class="dropdown-option" data-lang="IT"><span class="dropdown-icon">&#127470;&#127481;</span> Italiano</button>
+        <button class="dropdown-option" data-lang="ES"><span class="dropdown-icon">&#127466;&#127480;</span> Espa&ntilde;ol</button>
+        <button class="dropdown-option" data-lang="ZH"><span class="dropdown-icon">&#127464;&#127475;</span> &#20013;&#25991;</button>
+        <button class="dropdown-option" data-lang="FR"><span class="dropdown-icon">&#127467;&#127479;</span> Fran&ccedil;ais</button>
+        <button class="dropdown-option" data-lang="DE"><span class="dropdown-icon">&#127465;&#127466;</span> Deutsch</button>
+      </div>
+    </div>
+    <div class="dropdown-wrapper">
+      <button class="top-bar-btn" id="mailBtn" title="Copy email" aria-label="Copy email address">&#9993; mail</button>
+      <div class="dropdown-menu mail-dropdown" id="mailDropdown">
+        <button class="dropdown-option" data-email="fbaldan@uw.edu">
+          <span class="dropdown-icon">&#127891;</span> fbaldan@uw.edu
+          <span class="mail-label">UW</span>
+        </button>
+        <button class="dropdown-option" data-email="federicobaldan2002@gmail.com">
+          <span class="dropdown-icon">&#9993;</span> federicobaldan2002@gmail.com
+          <span class="mail-label">Personal</span>
+        </button>
+      </div>
+    </div>
+    <a href="Baldan_Resume_update.pdf" target="_blank" rel="noopener noreferrer" class="top-bar-btn" title="Download CV" aria-label="Download curriculum vitae" download>&#128196; cv</a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container">
+    <div class="profile-photo-container">
+      <div class="profile-photo-wrapper" id="profilePhoto">
+        <img src="larry.jpg" alt="Federico Baldan" class="profile-photo">
+        <div class="profile-photo-tooltip">Whatcha looking at?</div>
+      </div>
+    </div>
+
+    <h1>
+      <span class="prompt">></span> <span class="name-clickable name-style-0" id="nameClick">Federico Baldan</span>
+    </h1>
+
+    <div class="role">
+      <span id="role1">aerospace engineer</span>
+      <span id="role2">grew up as a vibe computer scientist</span>
+    </div>
+
+    <div class="bio clickable-item" data-panel="bio" id="bioText">
+      click here to learn more about me...
+    </div>
+
+    <details>
+      <summary id="summaryAbout">about</summary>
+      <div class="section-content">
+        <ul>
+          <li>Scrivi qualcosa su di te qui...</li>
+          <li>I tuoi interessi, passioni, hobby</li>
+          <li>Cosa ti rende unico</li>
+        </ul>
+      </div>
+    </details>
+
+    <details>
+      <summary id="summaryProjects">projects</summary>
+      <div class="section-content">
+        <ul>
+          <li><span class="clickable-item" data-panel="project1">Progetto Alpha</span> - Sistema di controllo autonomo</li>
+          <li><span class="clickable-item" data-panel="project2">Progetto Beta</span> - Machine learning pipeline</li>
+          <li><span class="clickable-item" data-panel="project3">Progetto Gamma</span> - Web app dashboard</li>
+        </ul>
+      </div>
+    </details>
+
+    <details>
+      <summary id="summaryCv">cv</summary>
+      <div class="section-content">
+        <ul>
+          <li><a href="Baldan_Resume_update.pdf" target="_blank" rel="noopener noreferrer" download>Download CV (PDF)</a></li>
+          <li>Skills: Python, MATLAB, CAD, JavaScript, ...</li>
+          <li>Education: La tua formazione...</li>
+        </ul>
+      </div>
+    </details>
+
+    <div class="social-links">
+      <a href="YOUR_LINKEDIN_URL" target="_blank" rel="noopener noreferrer" class="social-link">[ in ]</a>
+      <a href="YOUR_GITHUB_URL" target="_blank" rel="noopener noreferrer" class="social-link">[ gh ]</a>
+      <a href="mailto:fbaldan@uw.edu" class="social-link">[ @ ]</a>
+      <a href="Baldan_Resume_update.pdf" target="_blank" rel="noopener noreferrer" class="social-link" download>[ cv ]</a>
+    </div>
+  </div>
+
+  <!-- Rocket (SVG) -->
+  <div class="rocket-container" id="rocketContainer">
+    <svg class="rocket-svg" viewBox="0 0 24 48" fill="none">
+      <path d="M12 0 L8 14 L16 14 Z" fill="#d0d0d0" stroke="#999" stroke-width="0.5"/>
+      <rect x="8" y="14" width="8" height="22" rx="1" fill="#c0c0c0" stroke="#999" stroke-width="0.5"/>
+      <circle cx="12" cy="22" r="2.5" fill="#3a3a3a" stroke="#888" stroke-width="0.5"/>
+      <path d="M8 32 L3 42 L8 38 Z" fill="#a0a0a0" stroke="#888" stroke-width="0.5"/>
+      <path d="M16 32 L21 42 L16 38 Z" fill="#a0a0a0" stroke="#888" stroke-width="0.5"/>
+      <path d="M9 36 L7 42 L17 42 L15 36 Z" fill="#888" stroke="#777" stroke-width="0.5"/>
+    </svg>
+    <div class="rocket-fire"></div>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <span id="statusMessage" role="status" aria-live="polite">powered by mass caffeine</span>
+    <button class="ignition-btn" id="ignitionBtn" title="Launch rocket!">
+      <svg class="rocket-icon" viewBox="0 0 12 16" fill="none">
+        <path d="M6 0 L4 5 L8 5 Z" fill="currentColor"/>
+        <rect x="4" y="5" width="4" height="8" rx="0.5" fill="currentColor"/>
+        <path d="M4 11 L2 15 L4 13 Z" fill="currentColor"/>
+        <path d="M8 11 L10 15 L8 13 Z" fill="currentColor"/>
+      </svg>
+      ignition!
+    </button>
+  </div>
+
+  <!-- Command Palette -->
+  <div class="command-palette-overlay" id="commandPalette">
+    <div class="command-palette">
+      <div class="command-input-wrapper">
+        <span class="prompt-symbol">></span>
+        <input type="text" class="command-input" id="commandInput" placeholder="Type a command..." autocomplete="off">
+      </div>
+      <div class="command-list" id="commandList">
+        <div class="command-item" data-action="cv"><span>cv</span><span class="shortcut">Download CV</span></div>
+        <div class="command-item" data-action="linkedin"><span>linkedin</span><span class="shortcut">Open profile</span></div>
+        <div class="command-item" data-action="github"><span>github</span><span class="shortcut">Go to repos</span></div>
+        <div class="command-item" data-action="email"><span>email</span><span class="shortcut">Send email</span></div>
+        <div class="command-item" data-action="theme"><span>theme</span><span class="shortcut">Toggle theme</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Side Panel -->
+  <div class="side-panel" id="sidePanel">
+    <button class="side-panel-close" id="panelClose" aria-label="Close panel">&times;</button>
+    <div id="panelContent"></div>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Image viewer">
+    <button class="lightbox-close" id="lightboxClose" aria-label="Close image viewer">&times;</button>
+    <button class="lightbox-nav lightbox-prev" id="lightboxPrev" aria-label="Previous image">&#8249;</button>
+    <img src="" alt="Gallery image" class="lightbox-img" id="lightboxImg">
+    <button class="lightbox-nav lightbox-next" id="lightboxNext" aria-label="Next image">&#8250;</button>
+    <div class="lightbox-counter"><span id="lightboxCurrent">1</span> / <span id="lightboxTotal">6</span></div>
+  </div>
+
+  <!-- Scroll Progress Bar -->
+  <div class="scroll-progress" id="scrollProgress"></div>
+
+  <!-- Copy Toast -->
+  <div class="copy-toast" id="copyToast" role="status" aria-live="polite">copied!</div>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
