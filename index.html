@@ -5,17 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Federico Baldan</title>
   <meta name="description" content="Federico Baldan - Aerospace Engineer & Computer Scientist. Portfolio, projects, and contact info.">
-  <meta name="theme-color" content="#252525">
+  <meta name="theme-color" content="#f8efea">
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-0">
+<body class="theme-light palette-cream">
 
   <!-- Top Bar -->
-  <div class="top-bar">
-    <button class="top-bar-btn" id="toggleBg" title="Background: dots" aria-label="Toggle background style">&#9632; bg</button>
-    <button class="top-bar-btn active" id="toggleTheme" title="Toggle dark/light mode" aria-label="Toggle dark/light theme">&#9789; theme</button>
+  <div class="top-bar reveal-target">
+    <button class="top-bar-btn magnetic-item" id="toggleBg" title="Palette: cream" aria-label="Cycle color palette">&#9632; bg</button>
+    <button class="top-bar-btn magnetic-item" id="toggleTheme" title="Switch to dark mode" aria-label="Toggle dark/light theme">&#9789; theme</button>
     <div class="dropdown-wrapper">
-      <button class="top-bar-btn" id="toggleLang" title="Change language">
+      <button class="top-bar-btn magnetic-item" id="toggleLang" title="Change language">
         <span id="langFlag">&#127468;&#127463;</span> <span id="langLabel">EN</span>
       </button>
       <div class="dropdown-menu" id="langDropdown">
@@ -28,7 +28,7 @@
       </div>
     </div>
     <div class="dropdown-wrapper">
-      <button class="top-bar-btn" id="mailBtn" title="Copy email" aria-label="Copy email address">&#9993; mail</button>
+      <button class="top-bar-btn magnetic-item" id="mailBtn" title="Copy email" aria-label="Copy email address">&#9993; mail</button>
       <div class="dropdown-menu mail-dropdown" id="mailDropdown">
         <button class="dropdown-option" data-email="fbaldan@uw.edu">
           <span class="dropdown-icon">&#127891;</span> fbaldan@uw.edu
@@ -40,32 +40,32 @@
         </button>
       </div>
     </div>
-    <a href="Baldan_Resume_update.pdf" target="_blank" rel="noopener noreferrer" class="top-bar-btn" title="Download CV" aria-label="Download curriculum vitae" download>&#128196; cv</a>
+    <a href="Baldan_Resume_update.pdf" target="_blank" rel="noopener noreferrer" class="top-bar-btn magnetic-item" title="Download CV" aria-label="Download curriculum vitae" download>&#128196; cv</a>
   </div>
 
   <!-- Main Content -->
   <div class="container">
-    <div class="profile-photo-container">
+    <div class="profile-photo-container reveal-target">
       <div class="profile-photo-wrapper" id="profilePhoto">
         <img src="larry.jpg" alt="Federico Baldan" class="profile-photo">
         <div class="profile-photo-tooltip">Whatcha looking at?</div>
       </div>
     </div>
 
-    <h1>
-      <span class="prompt">></span> <span class="name-clickable name-style-0" id="nameClick">Federico Baldan</span>
+    <h1 class="reveal-target">
+      <span class="prompt" id="nameLead">&lt;/&gt;</span> <span class="name-clickable name-style-0" id="nameClick">Federico Baldan</span>
     </h1>
 
-    <div class="role">
+    <div class="role reveal-target">
       <span id="role1">aerospace engineer</span>
       <span id="role2">grew up as a vibe computer scientist</span>
     </div>
 
-    <div class="bio clickable-item" data-panel="bio" id="bioText">
+    <div class="bio clickable-item reveal-target" data-panel="bio" id="bioText">
       click here to learn more about me...
     </div>
 
-    <details>
+    <details class="reveal-target">
       <summary id="summaryAbout">about</summary>
       <div class="section-content">
         <ul>
@@ -76,7 +76,7 @@
       </div>
     </details>
 
-    <details>
+    <details class="reveal-target">
       <summary id="summaryProjects">projects</summary>
       <div class="section-content">
         <ul>
@@ -87,7 +87,7 @@
       </div>
     </details>
 
-    <details>
+    <details class="reveal-target">
       <summary id="summaryCv">cv</summary>
       <div class="section-content">
         <ul>
@@ -98,31 +98,53 @@
       </div>
     </details>
 
-    <div class="social-links">
-      <a href="YOUR_LINKEDIN_URL" target="_blank" rel="noopener noreferrer" class="social-link">[ in ]</a>
-      <a href="YOUR_GITHUB_URL" target="_blank" rel="noopener noreferrer" class="social-link">[ gh ]</a>
-      <a href="mailto:fbaldan@uw.edu" class="social-link">[ @ ]</a>
-      <a href="Baldan_Resume_update.pdf" target="_blank" rel="noopener noreferrer" class="social-link" download>[ cv ]</a>
+    <div class="social-links reveal-target">
+      <a href="YOUR_LINKEDIN_URL" target="_blank" rel="noopener noreferrer" class="social-link magnetic-item" aria-label="LinkedIn profile">
+        <svg class="social-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003zM7.119 20.452H3.555V9h3.564v11.452zM5.337 7.433a2.062 2.062 0 1 1 .004-4.124 2.062 2.062 0 0 1-.004 4.124zM20.447 20.452H16.89V14.87c0-1.331-.027-3.045-1.855-3.045-1.859 0-2.143 1.45-2.143 2.95v5.677H9.336V9h3.414v1.561h.049c.476-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286z"/>
+        </svg>
+        <span class="social-label">LinkedIn</span>
+      </a>
+      <a href="YOUR_GITHUB_URL" target="_blank" rel="noopener noreferrer" class="social-link magnetic-item" aria-label="GitHub profile">
+        <svg class="social-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 .297a12 12 0 0 0-3.797 23.398c.6.113.82-.258.82-.577v-2.234c-3.338.726-4.042-1.416-4.042-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.838 1.237 1.838 1.237 1.07 1.834 2.809 1.304 3.495.997.108-.775.418-1.305.762-1.604-2.665-.305-5.466-1.335-5.466-5.93 0-1.31.47-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.5 11.5 0 0 1 12 6.11c1.022.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.607-2.804 5.624-5.476 5.921.43.372.814 1.102.814 2.222v3.293c0 .322.218.694.825.576A12.002 12.002 0 0 0 12 .297"/>
+        </svg>
+        <span class="social-label">GitHub</span>
+      </a>
+      <a href="mailto:fbaldan@uw.edu" class="social-link magnetic-item" aria-label="Send email">
+        <svg class="social-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M2 5h20a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm10 7.1L3.6 7h16.8L12 12.1zm0 2.2L3 8.8V17h18V8.8l-9 5.5z"/>
+        </svg>
+        <span class="social-label">Email</span>
+      </a>
+      <a href="Baldan_Resume_update.pdf" target="_blank" rel="noopener noreferrer" class="social-link magnetic-item" download aria-label="Download CV">
+        <svg class="social-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 1.5V8h4.5L14 3.5zM8 11h8v1.5H8V11zm0 4h8v1.5H8V15zm0 4h5v1.5H8V19z"/>
+        </svg>
+        <span class="social-label">CV</span>
+      </a>
     </div>
   </div>
 
   <!-- Rocket (SVG) -->
   <div class="rocket-container" id="rocketContainer">
-    <svg class="rocket-svg" viewBox="0 0 24 48" fill="none">
-      <path d="M12 0 L8 14 L16 14 Z" fill="#d0d0d0" stroke="#999" stroke-width="0.5"/>
-      <rect x="8" y="14" width="8" height="22" rx="1" fill="#c0c0c0" stroke="#999" stroke-width="0.5"/>
-      <circle cx="12" cy="22" r="2.5" fill="#3a3a3a" stroke="#888" stroke-width="0.5"/>
-      <path d="M8 32 L3 42 L8 38 Z" fill="#a0a0a0" stroke="#888" stroke-width="0.5"/>
-      <path d="M16 32 L21 42 L16 38 Z" fill="#a0a0a0" stroke="#888" stroke-width="0.5"/>
-      <path d="M9 36 L7 42 L17 42 L15 36 Z" fill="#888" stroke="#777" stroke-width="0.5"/>
+    <svg class="rocket-svg" viewBox="0 0 28 52" fill="none" aria-hidden="true">
+      <rect x="8" y="10" width="12" height="28" rx="4" fill="#f6f2ee"/>
+      <rect x="10" y="13" width="8" height="6" rx="2" fill="#ff8d7a"/>
+      <rect x="11" y="22" width="6" height="8" rx="3" fill="#5bb6ff"/>
+      <path d="M14 2L8 10h12L14 2z" fill="#ffd59a"/>
+      <path d="M8 31L3 40l5-2v-7z" fill="#ff8d7a"/>
+      <path d="M20 31l5 9-5-2v-7z" fill="#ff8d7a"/>
+      <rect x="10" y="37" width="8" height="4" rx="1.5" fill="#ffd59a"/>
+      <rect x="9" y="41" width="10" height="2" rx="1" fill="#f6f2ee"/>
     </svg>
     <div class="rocket-fire"></div>
   </div>
 
   <!-- Status Bar -->
-  <div class="status-bar">
+  <div class="status-bar reveal-target">
     <span id="statusMessage" role="status" aria-live="polite">powered by mass caffeine</span>
-    <button class="ignition-btn" id="ignitionBtn" title="Launch rocket!">
+    <button class="ignition-btn magnetic-item" id="ignitionBtn" title="Launch rocket!">
       <svg class="rocket-icon" viewBox="0 0 12 16" fill="none">
         <path d="M6 0 L4 5 L8 5 Z" fill="currentColor"/>
         <rect x="4" y="5" width="4" height="8" rx="0.5" fill="currentColor"/>
@@ -131,7 +153,26 @@
       </svg>
       ignition!
     </button>
+    <button class="ignition-btn magnetic-item" id="radarBtn" title="Launch orbital graph">
+      <svg class="rocket-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2"/>
+        <circle cx="8" cy="8" r="3.5" stroke="currentColor" stroke-width="1"/>
+        <path d="M8 8 L13 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+      radar!
+    </button>
+    <a
+      href="https://www.youtube.com/results?search_query=U2+I+Still+Haven%27t+Found+What+I%27m+Looking+For"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="status-song-link magnetic-item"
+      id="songLink"
+      aria-label="Open song on YouTube"
+    >
+      song
+    </a>
   </div>
+  <div class="radar-overlay" id="radarOverlay" aria-hidden="true"></div>
 
   <!-- Command Palette -->
   <div class="command-palette-overlay" id="commandPalette">

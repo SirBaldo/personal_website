@@ -97,14 +97,27 @@ console.log('%c FEDERICO BALDAN ', 'background: #58a6ff; color: #1a1a1a; font-si
 console.log('Hey dev! You found the easter egg.');
 console.log('Tip: click on the name to cycle through styles!');
 
+var reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+var prefersReducedMotion = reducedMotionQuery.matches;
+
+if (reducedMotionQuery.addEventListener) {
+  reducedMotionQuery.addEventListener('change', function(e) {
+    prefersReducedMotion = e.matches;
+  });
+} else if (reducedMotionQuery.addListener) {
+  reducedMotionQuery.addListener(function(e) {
+    prefersReducedMotion = e.matches;
+  });
+}
+
 // ══════════════════════════════════════════
-// NAME STYLE CYCLING (4 styles)
+// NAME STYLE CYCLING (curated set)
 // ══════════════════════════════════════════
 
 var nameClick = document.getElementById('nameClick');
 var NAME_TEXT = 'Federico Baldan';
-var currentNameStyle = 0;
-var TOTAL_STYLES = 4;
+var currentNameStylePos = 0;
+var nameClickBurstTimeoutId = null;
 
 var blockColors = [
   '#f4a8b8', '#a8d8ea', '#c3b1e1', '#f9d89c', '#b8e6c8',
@@ -112,32 +125,141 @@ var blockColors = [
   '#e8b0c0', '#90c0e8', '#c8b0e0', '#f8d890', '#98d8c0'
 ];
 
-function applyNameStyle(idx) {
-  for (var i = 0; i < TOTAL_STYLES; i++) {
-    nameClick.classList.remove('name-style-' + i);
-  }
-  nameClick.classList.add('name-style-' + idx);
+var missionTilts = [-4, 3, -2, 2, -3, 4, -1, 1];
+var telemetryBits = ['00', '01', '10', '11'];
+var brailleMap = {
+  a: '\u2801', b: '\u2803', c: '\u2809', d: '\u2819', e: '\u2811',
+  f: '\u280B', g: '\u281B', h: '\u2813', i: '\u280A', j: '\u281A',
+  k: '\u2805', l: '\u2807', m: '\u280D', n: '\u281D', o: '\u2815',
+  p: '\u280F', q: '\u281F', r: '\u2817', s: '\u280E', t: '\u281E',
+  u: '\u2825', v: '\u2827', w: '\u283A', x: '\u282D', y: '\u283D',
+  z: '\u2835'
+};
 
-  if (idx === 1) {
-    // Claude blocks: each letter in a colored block
-    var html = '';
-    for (var j = 0; j < NAME_TEXT.length; j++) {
-      if (NAME_TEXT[j] === ' ') {
-        html += '<span class="name-space"></span>';
-      } else {
-        html += '<span class="name-letter" style="background:' + blockColors[j % blockColors.length] + '">' + NAME_TEXT[j] + '</span>';
-      }
+var nameStyleRegistry = [
+  { id: 0, className: 'name-style-0', render: renderPlainName },
+  { id: 1, className: 'name-style-1', render: renderClaudeBlocksName },
+  { id: 2, className: 'name-style-2', render: renderPlainName },
+  { id: 3, className: 'name-style-3', render: renderPlainName },
+  { id: 4, className: 'name-style-4', render: renderSubtleOrbitName },
+  { id: 6, className: 'name-style-6', render: renderTelemetryName },
+  { id: 7, className: 'name-style-7', render: renderMissionStampName },
+  { id: 9, className: 'name-style-9', render: renderBrailleOnlyName },
+  { id: 13, className: 'name-style-13', render: renderMonolineEngraveName },
+  { id: 14, className: 'name-style-14', render: renderNeonWireName },
+  { id: 15, className: 'name-style-15', render: renderDotMatrixName },
+  { id: 16, className: 'name-style-16', render: renderAeroSerifName }
+];
+
+function renderPlainName() {
+  nameClick.textContent = NAME_TEXT;
+}
+
+function renderNameByLetter(className, optionsBuilder) {
+  var html = '';
+  for (var i = 0; i < NAME_TEXT.length; i++) {
+    var letter = NAME_TEXT[i];
+    if (letter === ' ') {
+      html += '<span class="name-space"></span>';
+      continue;
     }
-    nameClick.innerHTML = html;
-  } else {
-    // All other styles: plain text (CSS handles the look)
-    nameClick.textContent = NAME_TEXT;
+
+    var extraAttrs = optionsBuilder ? optionsBuilder(letter, i) : '';
+    html += '<span class="' + className + '" ' + extraAttrs + '>' + letter + '</span>';
   }
+  nameClick.innerHTML = html;
+}
+
+function renderClaudeBlocksName() {
+  renderNameByLetter('name-letter', function(letter, idx) {
+    return 'style="background:' + blockColors[idx % blockColors.length] + '"';
+  });
+}
+
+function renderSubtleOrbitName() {
+  nameClick.innerHTML =
+    '<span class="orbital-core">' + NAME_TEXT + '</span>' +
+    '<span class="orbit-ring orbit-ring-1" aria-hidden="true"></span>' +
+    '<span class="orbit-ring orbit-ring-2" aria-hidden="true"></span>' +
+    '<span class="orbit-planet orbit-planet-1" aria-hidden="true"></span>' +
+    '<span class="orbit-planet orbit-planet-2" aria-hidden="true"></span>' +
+    '<span class="orbit-planet orbit-planet-3" aria-hidden="true"></span>';
+}
+
+function renderTelemetryName() {
+  renderNameByLetter('telemetry-letter', function(letter, idx) {
+    return 'data-bit="' + telemetryBits[idx % telemetryBits.length] + '"';
+  });
+}
+
+function renderMissionStampName() {
+  renderNameByLetter('mission-letter', function(letter, idx) {
+    return 'style="--tilt:' + missionTilts[idx % missionTilts.length] + 'deg"';
+  });
+}
+
+function getBrailleChar(letter) {
+  var normalized = letter.toLowerCase();
+  return brailleMap[normalized] || '\u2800';
+}
+
+function nameToBraille(text) {
+  return text.split('').map(function(letter) {
+    if (letter === ' ') return ' ';
+    return getBrailleChar(letter);
+  }).join('');
+}
+
+function renderBrailleOnlyName() {
+  nameClick.classList.add('braille-only');
+  nameClick.innerHTML = '<span class="braille-label">braille:</span> <span class="braille-text">' + nameToBraille(NAME_TEXT) + '</span>';
+}
+
+function renderMonolineEngraveName() {
+  renderNameByLetter('monoline-letter');
+}
+
+function renderNeonWireName() {
+  renderNameByLetter('neon-wire-letter');
+}
+
+function renderDotMatrixName() {
+  renderNameByLetter('dot-matrix-letter');
+}
+
+function renderAeroSerifName() {
+  renderNameByLetter('aero-serif-letter');
+}
+
+function triggerNameClickAccent() {
+  nameClick.classList.remove('name-click-burst');
+  void nameClick.offsetWidth;
+  nameClick.classList.add('name-click-burst');
+  if (nameClickBurstTimeoutId) clearTimeout(nameClickBurstTimeoutId);
+  nameClickBurstTimeoutId = setTimeout(function() {
+    nameClick.classList.remove('name-click-burst');
+    nameClickBurstTimeoutId = null;
+  }, 420);
+}
+
+function applyNameStyleByPos(pos) {
+  var styleConfig = nameStyleRegistry[pos] || nameStyleRegistry[0];
+  nameClick.classList.remove('braille-only');
+  nameStyleRegistry.forEach(function(style) {
+    nameClick.classList.remove(style.className);
+  });
+  nameClick.classList.add(styleConfig.className);
+  styleConfig.render();
 }
 
 nameClick.addEventListener('click', function() {
-  currentNameStyle = (currentNameStyle + 1) % TOTAL_STYLES;
-  applyNameStyle(currentNameStyle);
+  currentNameStylePos = (currentNameStylePos + 1) % nameStyleRegistry.length;
+  applyNameStyleByPos(currentNameStylePos);
+  triggerNameClickAccent();
+});
+
+nameClick.addEventListener('mousedown', function(e) {
+  e.preventDefault();
 });
 
 // ══════════════════════════════════════════
@@ -146,6 +268,9 @@ nameClick.addEventListener('click', function() {
 
 var rocketContainer = document.getElementById('rocketContainer');
 var ignitionBtn = document.getElementById('ignitionBtn');
+var radarBtn = document.getElementById('radarBtn');
+var radarOverlay = document.getElementById('radarOverlay');
+var radarAnimating = false;
 
 function launchRocket() {
   rocketContainer.classList.remove('launching');
@@ -161,6 +286,9 @@ function launchRocket() {
 }
 
 ignitionBtn.addEventListener('click', launchRocket);
+if (radarBtn) {
+  radarBtn.addEventListener('click', launchRadarGraph);
+}
 
 function createParticles(x, y) {
   var count = 20;
@@ -186,6 +314,75 @@ function createParticles(x, y) {
   }
 }
 
+function launchRadarGraph() {
+  if (!radarOverlay || radarAnimating) return;
+  radarAnimating = true;
+  radarOverlay.innerHTML = '';
+
+  var w = window.innerWidth;
+  var h = window.innerHeight;
+  var bottomSafe = 84;
+  var isMobile = window.matchMedia('(max-width: 768px)').matches;
+  var nodeCount = prefersReducedMotion ? 6 : (isMobile ? 9 : 14);
+  var minX = Math.round(w * 0.12);
+  var maxX = Math.round(w * 0.88);
+  var minY = Math.round(h * 0.12);
+  var maxY = Math.max(minY + 60, h - bottomSafe - Math.round(h * 0.08));
+  var points = [];
+
+  for (var i = 0; i < nodeCount; i++) {
+    points.push({
+      x: randomRange(minX, maxX),
+      y: randomRange(minY, maxY)
+    });
+  }
+
+  points.sort(function(a, b) { return a.x - b.x; });
+
+  points.forEach(function(point, idx) {
+    var dot = document.createElement('div');
+    dot.className = 'radar-dot';
+    dot.style.left = point.x + 'px';
+    dot.style.top = point.y + 'px';
+    dot.style.animationDelay = (idx * 0.04) + 's';
+    radarOverlay.appendChild(dot);
+  });
+
+  for (var p = 0; p < points.length; p++) {
+    connectRadarPoints(points[p], points[p + 1], p * 0.05, isMobile);
+    if (p % 2 === 0 && points[p + 2]) {
+      connectRadarPoints(points[p], points[p + 2], p * 0.04 + 0.08, isMobile);
+    }
+  }
+
+  setTimeout(function() {
+    radarOverlay.innerHTML = '';
+    radarAnimating = false;
+  }, prefersReducedMotion ? 900 : 1700);
+}
+
+function connectRadarPoints(a, b, delay, isMobile) {
+  if (!a || !b) return;
+  var dx = b.x - a.x;
+  var dy = b.y - a.y;
+  var dist = Math.sqrt(dx * dx + dy * dy);
+  var maxDistance = isMobile ? 220 : 280;
+  if (dist > maxDistance) return;
+
+  var line = document.createElement('div');
+  line.className = 'radar-link';
+  line.style.left = a.x + 'px';
+  line.style.top = (a.y + 2) + 'px';
+  line.style.width = dist + 'px';
+  line.style.transform = 'rotate(' + Math.atan2(dy, dx) + 'rad)';
+  line.style.animationDelay = delay + 's';
+  radarOverlay.appendChild(line);
+}
+
+function randomRange(min, max) {
+  return Math.round(min + Math.random() * (max - min));
+}
+
 // ══════════════════════════════════════════
 // SIDE PANEL
 // ══════════════════════════════════════════
@@ -197,6 +394,7 @@ var clickableItems = document.querySelectorAll('.clickable-item');
 
 var currentGallery = [];
 var currentGalleryIndex = 0;
+var panelPolishTimeoutId = null;
 
 clickableItems.forEach(function(item) {
   item.addEventListener('click', function(e) {
@@ -229,8 +427,17 @@ clickableItems.forEach(function(item) {
 
     panelContent.innerHTML = html;
 
+    sidePanel.classList.remove('panel-polish');
+    void sidePanel.offsetWidth;
+    sidePanel.classList.add('panel-polish');
     sidePanel.classList.add('open');
     document.body.classList.add('panel-open');
+
+    if (panelPolishTimeoutId) clearTimeout(panelPolishTimeoutId);
+    panelPolishTimeoutId = setTimeout(function() {
+      sidePanel.classList.remove('panel-polish');
+      panelPolishTimeoutId = null;
+    }, 520);
   });
 });
 
@@ -239,6 +446,11 @@ panelClose.addEventListener('click', closePanel);
 function closePanel() {
   sidePanel.classList.remove('open');
   document.body.classList.remove('panel-open');
+  if (panelPolishTimeoutId) {
+    clearTimeout(panelPolishTimeoutId);
+    panelPolishTimeoutId = null;
+  }
+  sidePanel.classList.remove('panel-polish');
 }
 
 panelContent.addEventListener('click', function(e) {
@@ -314,32 +526,61 @@ lightbox.addEventListener('touchend', function(e) {
 // ══════════════════════════════════════════
 
 // ══════════════════════════════════════════
-// TOP BAR: BACKGROUND SWITCHER
+// TOP BAR: THEME + PALETTE (2-step model)
 // ══════════════════════════════════════════
 
 var toggleBg = document.getElementById('toggleBg');
-var bgNames = ['dots', 'one-dark', 'dracula', 'nord', 'gruvbox', 'tokyo-night'];
-var currentBg = 0;
-
-toggleBg.addEventListener('click', function() {
-  document.body.classList.remove('bg-' + currentBg);
-  currentBg = (currentBg + 1) % bgNames.length;
-  document.body.classList.add('bg-' + currentBg);
-  this.title = 'Background: ' + bgNames[currentBg];
-});
-
-// ══════════════════════════════════════════
-// TOP BAR: THEME TOGGLE
-// ══════════════════════════════════════════
-
 var toggleTheme = document.getElementById('toggleTheme');
-var isDarkMode = true;
+var themeColorMeta = document.querySelector('meta[name="theme-color"]');
 
-toggleTheme.addEventListener('click', function() {
-  isDarkMode = !isDarkMode;
-  document.body.classList.toggle('light-mode', !isDarkMode);
-  this.classList.toggle('active', isDarkMode);
-});
+var paletteMap = {
+  light: ['cream', 'rose', 'sky', 'sage', 'peach', 'lavender'],
+  dark: ['charcoal', 'warm-ink', 'navy', 'forest', 'plum', 'teal']
+};
+
+var themeMetaColors = {
+  light: '#f8efea',
+  dark: '#1a1a1a'
+};
+
+var currentTheme = 'light';
+var currentPaletteIndexByTheme = { light: 0, dark: 0 };
+
+function getAllPaletteNames() {
+  return paletteMap.light.concat(paletteMap.dark);
+}
+
+function applyThemePalette() {
+  var allPalettes = getAllPaletteNames();
+  document.body.classList.remove('theme-light', 'theme-dark');
+  allPalettes.forEach(function(name) {
+    document.body.classList.remove('palette-' + name);
+  });
+
+  var paletteName = paletteMap[currentTheme][currentPaletteIndexByTheme[currentTheme]];
+  document.body.classList.add('theme-' + currentTheme, 'palette-' + paletteName);
+  toggleBg.title = 'Palette: ' + paletteName;
+  toggleBg.setAttribute('aria-label', 'Cycle color palette. Current ' + paletteName);
+  toggleTheme.title = currentTheme === 'light' ? 'Switch to dark mode' : 'Switch to light mode';
+  toggleTheme.classList.toggle('active', currentTheme === 'dark');
+  if (themeColorMeta) {
+    themeColorMeta.setAttribute('content', themeMetaColors[currentTheme]);
+  }
+}
+
+function toggleThemeMode() {
+  currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+  applyThemePalette();
+}
+
+function cycleActiveThemePalette() {
+  var list = paletteMap[currentTheme];
+  currentPaletteIndexByTheme[currentTheme] = (currentPaletteIndexByTheme[currentTheme] + 1) % list.length;
+  applyThemePalette();
+}
+
+toggleBg.addEventListener('click', cycleActiveThemePalette);
+toggleTheme.addEventListener('click', toggleThemeMode);
 
 // ══════════════════════════════════════════
 // TOP BAR: LANGUAGE DROPDOWN
@@ -609,12 +850,66 @@ commands.forEach(function(cmd) {
 function executeCommand(action) {
   closePalette();
   if (action === 'theme') {
-    isDarkMode = !isDarkMode;
-    document.body.classList.toggle('light-mode', !isDarkMode);
-    toggleTheme.classList.toggle('active', isDarkMode);
+    toggleThemeMode();
   } else if (action === 'email') {
     copyToClipboard('fbaldan@uw.edu');
   } else if (urls[action]) {
-    window.open(urls[action], '_blank');
+    window.open(urls[action], '_blank', 'noopener');
   }
 }
+
+// ══════════════════════════════════════════
+// MICRO-WOW: STAGGERED REVEAL + MAGNETIC HOVER
+// ══════════════════════════════════════════
+
+function initStaggeredReveal() {
+  var revealTargets = Array.from(document.querySelectorAll('.reveal-target'));
+  if (revealTargets.length === 0) return;
+
+  if (prefersReducedMotion) {
+    revealTargets.forEach(function(item) { item.classList.add('revealed'); });
+    return;
+  }
+
+  revealTargets.forEach(function(item, idx) {
+    setTimeout(function() {
+      item.classList.add('revealed');
+    }, 80 + idx * 65);
+  });
+}
+
+function initMagneticHover() {
+  var finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  if (!finePointer || prefersReducedMotion) return;
+
+  var magneticItems = document.querySelectorAll('.magnetic-item');
+  magneticItems.forEach(function(item) {
+    var maxOffset = item.classList.contains('social-link') ? 10 : 7;
+
+    item.addEventListener('mousemove', function(e) {
+      var rect = item.getBoundingClientRect();
+      var relX = (e.clientX - (rect.left + rect.width / 2)) / (rect.width / 2);
+      var relY = (e.clientY - (rect.top + rect.height / 2)) / (rect.height / 2);
+      var dx = Math.max(-1, Math.min(1, relX)) * maxOffset;
+      var dy = Math.max(-1, Math.min(1, relY)) * maxOffset;
+      item.style.transform = 'translate3d(' + dx.toFixed(2) + 'px, ' + dy.toFixed(2) + 'px, 0)';
+    });
+
+    item.addEventListener('mouseleave', function() {
+      item.style.transform = '';
+    });
+
+    item.addEventListener('blur', function() {
+      item.style.transform = '';
+    });
+  });
+}
+
+function initPortfolioExperience() {
+  applyNameStyleByPos(0);
+  applyThemePalette();
+  initStaggeredReveal();
+  initMagneticHover();
+}
+
+initPortfolioExperience();
