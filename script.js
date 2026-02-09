@@ -111,6 +111,41 @@ if (reducedMotionQuery.addEventListener) {
 }
 
 // ══════════════════════════════════════════
+// PROFILE PHOTO EXPAND
+// ══════════════════════════════════════════
+
+var profilePhotoWrapper = document.getElementById('profilePhoto');
+var photoBackdrop = document.getElementById('photoBackdrop');
+
+function togglePhotoExpand() {
+  var isExpanded = profilePhotoWrapper.classList.contains('photo-expanded');
+  if (isExpanded) {
+    closePhotoExpand();
+  } else {
+    profilePhotoWrapper.classList.add('photo-expanded');
+    photoBackdrop.classList.add('active');
+  }
+}
+
+function closePhotoExpand() {
+  profilePhotoWrapper.classList.remove('photo-expanded');
+  photoBackdrop.classList.remove('active');
+}
+
+profilePhotoWrapper.addEventListener('click', function(e) {
+  e.stopPropagation();
+  togglePhotoExpand();
+});
+
+photoBackdrop.addEventListener('click', closePhotoExpand);
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && profilePhotoWrapper.classList.contains('photo-expanded')) {
+    closePhotoExpand();
+  }
+});
+
+// ══════════════════════════════════════════
 // NAME STYLE CYCLING (curated set)
 // ══════════════════════════════════════════
 
@@ -120,9 +155,11 @@ var currentNameStylePos = 0;
 var nameClickBurstTimeoutId = null;
 
 var blockColors = [
-  '#f4a8b8', '#a8d8ea', '#c3b1e1', '#f9d89c', '#b8e6c8',
-  '#f0b8d0', '#a0c8f0', '#d4c0e8', '#fce4a8', '#a8e0d0',
-  '#e8b0c0', '#90c0e8', '#c8b0e0', '#f8d890', '#98d8c0'
+  'rgba(244, 168, 184, 0.25)', 'rgba(168, 216, 234, 0.25)', 'rgba(195, 177, 225, 0.25)',
+  'rgba(249, 216, 156, 0.25)', 'rgba(184, 230, 200, 0.25)', 'rgba(240, 184, 208, 0.25)',
+  'rgba(160, 200, 240, 0.25)', 'rgba(212, 192, 232, 0.25)', 'rgba(252, 228, 168, 0.25)',
+  'rgba(168, 224, 208, 0.25)', 'rgba(232, 176, 192, 0.25)', 'rgba(144, 192, 232, 0.25)',
+  'rgba(200, 176, 224, 0.25)', 'rgba(248, 216, 144, 0.25)', 'rgba(152, 216, 192, 0.25)'
 ];
 
 var missionTilts = [-4, 3, -2, 2, -3, 4, -1, 1];
@@ -136,18 +173,25 @@ var brailleMap = {
   z: '\u2835'
 };
 
+var signLanguageMap = {
+  a: '🤜', b: '✋', c: '👌', d: '☝️', e: '🤙',
+  f: '✌️', g: '🤞', h: '👆', i: '🖖', j: '👍',
+  k: '✊', l: '🤘', m: '🤟', n: '🖐️', o: '👋',
+  p: '🤚', q: '👐', r: '🙌', s: '🤲', t: '🙏',
+  u: '👏', v: '🤝', w: '👊', x: '✍️', y: '🖕',
+  z: '🤛'
+};
+
 var nameStyleRegistry = [
   { id: 1, className: 'name-style-1', render: renderClaudeBlocksName },
   { id: 2, className: 'name-style-2', render: renderPlainName },
   { id: 3, className: 'name-style-3', render: renderPlainName },
-  { id: 4, className: 'name-style-4', render: renderPlanetConstellationName },
+  { id: 4, className: 'name-style-4', render: renderAerospaceHudName },
   { id: 6, className: 'name-style-6', render: renderTelemetryName },
   { id: 7, className: 'name-style-7', render: renderMissionStampName },
   { id: 9, className: 'name-style-9', render: renderBrailleOnlyName },
   { id: 13, className: 'name-style-13', render: renderMonolineEngraveName },
-  { id: 14, className: 'name-style-14', render: renderNeonWireName },
-  { id: 15, className: 'name-style-15', render: renderDotMatrixName },
-  { id: 16, className: 'name-style-16', render: renderAeroSerifName }
+  { id: 20, className: 'name-style-20', render: renderSignLanguageName }
 ];
 
 function renderPlainName() {
@@ -175,27 +219,25 @@ function renderClaudeBlocksName() {
   });
 }
 
-function renderPlanetConstellationName() {
+function renderAerospaceHudName() {
   var chars = NAME_TEXT.split('');
-  var html = '<span class="planet-constellation-core">';
+  var html = '<span class="hud-core">';
   for (var i = 0; i < chars.length; i++) {
     var ch = chars[i];
     if (ch === ' ') {
       html += '<span class="name-space"></span>';
-      continue;
-    }
-    if (ch === 'o' || ch === 'a' || ch === 'd') {
-      html += '<span class="planet-glyph" data-char="' + ch + '" aria-label="' + ch + '">' + ch + '</span>';
     } else {
-      html += '<span class="constellation-letter">' + ch + '</span>';
+      html += '<span class="hud-letter">' + ch + '</span>';
     }
   }
   html += '</span>';
-  html += '<span class="constellation-track constellation-track-1" aria-hidden="true"></span>';
-  html += '<span class="constellation-track constellation-track-2" aria-hidden="true"></span>';
-  html += '<span class="constellation-node constellation-node-1" aria-hidden="true"></span>';
-  html += '<span class="constellation-node constellation-node-2" aria-hidden="true"></span>';
-  html += '<span class="constellation-node constellation-node-3" aria-hidden="true"></span>';
+  html += '<span class="hud-flight-path" aria-hidden="true"></span>';
+  html += '<span class="hud-waypoint" style="left:12%" aria-hidden="true"></span>';
+  html += '<span class="hud-waypoint" style="left:38%" aria-hidden="true"></span>';
+  html += '<span class="hud-waypoint" style="left:64%" aria-hidden="true"></span>';
+  html += '<span class="hud-waypoint" style="left:88%" aria-hidden="true"></span>';
+  html += '<span class="hud-coord hud-coord-left" aria-hidden="true">ALT 328</span>';
+  html += '<span class="hud-coord hud-coord-right" aria-hidden="true">HDG 045</span>';
   nameClick.innerHTML = html;
 }
 
@@ -228,21 +270,28 @@ function renderBrailleOnlyName() {
   nameClick.innerHTML = '<span class="braille-label">braille:</span> <span class="braille-text">' + nameToBraille(NAME_TEXT) + '</span>';
 }
 
+function getSignLanguageChar(letter) {
+  var normalized = letter.toLowerCase();
+  return signLanguageMap[normalized] || '✋';
+}
+
+function nameToSignLanguage(text) {
+  return text.split('').map(function(letter) {
+    if (letter === ' ') return '   ';
+    return getSignLanguageChar(letter);
+  }).join(' ');
+}
+
+function renderSignLanguageName() {
+  nameClick.classList.add('sign-language-style');
+  nameClick.innerHTML = '<span class="sign-language-label">sign language:</span> <span class="sign-language-text">' + nameToSignLanguage(NAME_TEXT) + '</span>';
+}
+
 function renderMonolineEngraveName() {
   renderNameByLetter('monoline-letter');
 }
 
-function renderNeonWireName() {
-  renderNameByLetter('neon-wire-letter');
-}
 
-function renderDotMatrixName() {
-  renderNameByLetter('dot-matrix-letter');
-}
-
-function renderAeroSerifName() {
-  renderNameByLetter('aero-serif-letter');
-}
 
 function triggerNameClickAccent() {
   nameClick.classList.remove('name-click-burst');
@@ -255,14 +304,27 @@ function triggerNameClickAccent() {
   }, 420);
 }
 
+function fitNameToContainer() {
+  nameClick.style.fontSize = '';
+  var parent = nameClick.parentElement;
+  if (!parent) return;
+  var maxWidth = parent.offsetWidth - 60;
+  var currentWidth = nameClick.scrollWidth;
+  if (currentWidth > maxWidth && maxWidth > 0) {
+    var scale = maxWidth / currentWidth;
+    nameClick.style.fontSize = Math.max(scale * 100, 55) + '%';
+  }
+}
+
 function applyNameStyleByPos(pos) {
   var styleConfig = nameStyleRegistry[pos] || nameStyleRegistry[0];
-  nameClick.classList.remove('braille-only');
+  nameClick.classList.remove('braille-only', 'name-style-0');
   nameStyleRegistry.forEach(function(style) {
     nameClick.classList.remove(style.className);
   });
   nameClick.classList.add(styleConfig.className);
   styleConfig.render();
+  requestAnimationFrame(fitNameToContainer);
 }
 
 nameClick.addEventListener('click', function() {
@@ -282,12 +344,20 @@ nameClick.addEventListener('mousedown', function(e) {
 var rocketContainer = document.getElementById('rocketContainer');
 var ignitionBtn = document.getElementById('ignitionBtn');
 var radarBtn = document.getElementById('radarBtn');
-var signalBtn = document.getElementById('signalBtn');
 var radarOverlay = document.getElementById('radarOverlay');
+var statusMessage = document.getElementById('statusMessage');
 var radarAnimating = false;
-var signalAnimating = false;
+var mlAnimating = false;
+var rocketLaunching = false;
+
+function updateAllStatusMessages(text) {
+  if (statusMessage) statusMessage.textContent = text;
+}
 
 function launchRocket() {
+  if (rocketLaunching) return;
+  rocketLaunching = true;
+
   rocketContainer.classList.remove('launching');
   void rocketContainer.offsetWidth;
   rocketContainer.classList.add('launching');
@@ -297,15 +367,13 @@ function launchRocket() {
 
   setTimeout(function() {
     rocketContainer.classList.remove('launching');
+    rocketLaunching = false;
   }, 2200);
 }
 
 ignitionBtn.addEventListener('click', launchRocket);
 if (radarBtn) {
   radarBtn.addEventListener('click', launchRadarGraph);
-}
-if (signalBtn) {
-  signalBtn.addEventListener('click', launchSignal);
 }
 
 function createParticles(x, y) {
@@ -333,7 +401,7 @@ function createParticles(x, y) {
 }
 
 function launchRadarGraph() {
-  if (!radarOverlay || radarAnimating || signalAnimating) return;
+  if (!radarOverlay || radarAnimating || mlAnimating) return;
   radarAnimating = true;
   radarOverlay.innerHTML = '';
 
@@ -376,7 +444,7 @@ function launchRadarGraph() {
   setTimeout(function() {
     radarOverlay.innerHTML = '';
     radarAnimating = false;
-  }, prefersReducedMotion ? 900 : 1700);
+  }, prefersReducedMotion ? 1200 : 2200);
 }
 
 function connectRadarPoints(a, b, delay, isMobile) {
@@ -400,6 +468,406 @@ function connectRadarPoints(a, b, delay, isMobile) {
 function randomRange(min, max) {
   return Math.round(min + Math.random() * (max - min));
 }
+
+// ══════════════════════════════════════════
+// ML FEATURES (Self-Attention, Neural Pulse, Q-Learning)
+// ══════════════════════════════════════════
+
+var qlearnBtn = document.getElementById('qlearnBtn');
+
+function isAnyAnimating() {
+  return radarAnimating || mlAnimating;
+}
+
+// ── Q-Learning Agent ──
+
+function launchQLearning() {
+  if (!radarOverlay || isAnyAnimating()) return;
+  mlAnimating = true;
+  radarOverlay.innerHTML = '';
+
+  var isMobile = window.matchMedia('(max-width: 768px)').matches;
+  var gridSize = isMobile ? 4 : 5;
+  var cellSize = isMobile ? 32 : 42;
+  var gridW = gridSize * cellSize;
+  var gridH = gridSize * cellSize;
+  var prev = statusMessage.textContent;
+  updateAllStatusMessages('exploring... | epsilon: 0.8');
+
+  var grid = document.createElement('div');
+  grid.className = 'q-grid';
+  grid.style.width = gridW + 'px';
+  grid.style.height = gridH + 'px';
+  grid.style.gridTemplateColumns = 'repeat(' + gridSize + ', ' + cellSize + 'px)';
+  grid.style.gridTemplateRows = 'repeat(' + gridSize + ', ' + cellSize + 'px)';
+
+  var cells = [];
+  for (var r = 0; r < gridSize; r++) {
+    for (var c = 0; c < gridSize; c++) {
+      var cell = document.createElement('div');
+      cell.className = 'q-cell';
+      cell.dataset.row = r;
+      cell.dataset.col = c;
+      grid.appendChild(cell);
+      cells.push(cell);
+    }
+  }
+  radarOverlay.appendChild(grid);
+
+  var agent = document.createElement('div');
+  agent.className = 'q-agent';
+  agent.style.left = (cellSize / 2 - 4) + 'px';
+  agent.style.top = (cellSize / 2 - 4) + 'px';
+  grid.appendChild(agent);
+
+  var goal = document.createElement('div');
+  goal.className = 'q-goal';
+  goal.style.left = ((gridSize - 1) * cellSize + cellSize / 2 - 5) + 'px';
+  goal.style.top = ((gridSize - 1) * cellSize + cellSize / 2 - 5) + 'px';
+  grid.appendChild(goal);
+
+  var explorationPath = [];
+  var cr = 0, cc = 0;
+  var explorationSteps = prefersReducedMotion ? 4 : 7;
+  for (var s = 0; s < explorationSteps; s++) {
+    var dirs = [];
+    if (cr > 0) dirs.push([-1, 0]);
+    if (cr < gridSize - 1) dirs.push([1, 0]);
+    if (cc > 0) dirs.push([0, -1]);
+    if (cc < gridSize - 1) dirs.push([0, 1]);
+    var d = dirs[Math.floor(Math.random() * dirs.length)];
+    cr += d[0]; cc += d[1];
+    explorationPath.push([cr, cc]);
+  }
+
+  var optimalPath = [];
+  cr = 0; cc = 0;
+  while (cr < gridSize - 1 || cc < gridSize - 1) {
+    if (cr < gridSize - 1 && (cc >= gridSize - 1 || Math.random() < 0.5)) {
+      cr++;
+    } else {
+      cc++;
+    }
+    optimalPath.push([cr, cc]);
+  }
+
+  var stepDelay = 180;
+  var arrows = ['\u2192', '\u2193', '\u2190', '\u2191', '\u2198'];
+
+  explorationPath.forEach(function(pos, idx) {
+    setTimeout(function() {
+      agent.style.left = (pos[1] * cellSize + cellSize / 2 - 4) + 'px';
+      agent.style.top = (pos[0] * cellSize + cellSize / 2 - 4) + 'px';
+      var cellIdx = pos[0] * gridSize + pos[1];
+      if (cells[cellIdx]) cells[cellIdx].classList.add('visited');
+    }, idx * stepDelay);
+  });
+
+  var convergenceStart = explorationSteps * stepDelay + 200;
+
+  setTimeout(function() {
+    updateAllStatusMessages('Q(s,a) converging');
+    agent.style.left = (cellSize / 2 - 4) + 'px';
+    agent.style.top = (cellSize / 2 - 4) + 'px';
+    agent.classList.add('converging');
+
+    optimalPath.forEach(function(pos, idx) {
+      setTimeout(function() {
+        agent.style.left = (pos[1] * cellSize + cellSize / 2 - 4) + 'px';
+        agent.style.top = (pos[0] * cellSize + cellSize / 2 - 4) + 'px';
+
+        var prevRow = idx === 0 ? 0 : optimalPath[idx - 1][0];
+        var prevCol = idx === 0 ? 0 : optimalPath[idx - 1][1];
+        var dr = pos[0] - prevRow;
+        var dc = pos[1] - prevCol;
+        var arrow = dc > 0 ? arrows[0] : dc < 0 ? arrows[2] : dr > 0 ? arrows[1] : arrows[3];
+        var prevCellIdx = prevRow * gridSize + prevCol;
+        if (cells[prevCellIdx] && !cells[prevCellIdx].querySelector('.q-arrow')) {
+          var arrowEl = document.createElement('span');
+          arrowEl.className = 'q-arrow';
+          arrowEl.textContent = arrow;
+          cells[prevCellIdx].appendChild(arrowEl);
+        }
+
+        if (pos[0] === gridSize - 1 && pos[1] === gridSize - 1) {
+          goal.classList.add('reached');
+          updateAllStatusMessages('reward +1.0 | optimal path found');
+        }
+      }, idx * stepDelay);
+    });
+  }, convergenceStart);
+
+  var totalDuration = convergenceStart + optimalPath.length * stepDelay + 800;
+
+  setTimeout(function() {
+    radarOverlay.innerHTML = '';
+    updateAllStatusMessages(prev);
+    mlAnimating = false;
+  }, prefersReducedMotion ? totalDuration * 0.6 : totalDuration);
+}
+
+if (qlearnBtn) qlearnBtn.addEventListener('click', launchQLearning);
+
+
+
+// ── RRT Path Planning ──
+
+var rrtBtn = document.getElementById('rrtBtn');
+
+function launchRRT() {
+  if (!radarOverlay || isAnyAnimating()) return;
+  mlAnimating = true;
+  radarOverlay.innerHTML = '';
+
+  var w = window.innerWidth;
+  var h = window.innerHeight;
+  var isMobile = window.matchMedia('(max-width: 768px)').matches;
+  var prev = statusMessage.textContent;
+  var margin = 80;
+
+  // Start and goal
+  var start = { x: margin + 20, y: h - margin - 40 };
+  var goal = { x: w - margin - 20, y: margin + 40 };
+
+  // Draw start and goal markers
+  var startEl = document.createElement('div');
+  startEl.className = 'rrt-node rrt-start';
+  startEl.style.left = start.x + 'px';
+  startEl.style.top = start.y + 'px';
+  radarOverlay.appendChild(startEl);
+
+  var goalEl = document.createElement('div');
+  goalEl.className = 'rrt-node rrt-goal';
+  goalEl.style.left = goal.x + 'px';
+  goalEl.style.top = goal.y + 'px';
+  radarOverlay.appendChild(goalEl);
+
+  // Random obstacles
+  var obstacleCount = isMobile ? 3 : 4;
+  var obstacles = [];
+  for (var oi = 0; oi < obstacleCount; oi++) {
+    var ox = margin + 60 + Math.random() * (w - margin * 2 - 120);
+    var oy = margin + 40 + Math.random() * (h - margin * 2 - 160);
+    var ow = 40 + Math.random() * 60;
+    var oh = 30 + Math.random() * 50;
+    obstacles.push({ x: ox, y: oy, w: ow, h: oh });
+    var obsEl = document.createElement('div');
+    obsEl.className = 'rrt-obstacle';
+    obsEl.style.left = ox + 'px';
+    obsEl.style.top = oy + 'px';
+    obsEl.style.width = ow + 'px';
+    obsEl.style.height = oh + 'px';
+    radarOverlay.appendChild(obsEl);
+  }
+
+  // RRT tree expansion
+  var nodes = [start];
+  var edges = [];
+  var totalNodes = prefersReducedMotion ? 15 : 35;
+  var stepSize = isMobile ? 35 : 50;
+  var nodeIdx = 0;
+  var goalReached = false;
+  var goalThreshold = 60;
+
+  updateAllStatusMessages('RRT: expanding... | nodes: 1');
+
+  function isColliding(x, y) {
+    for (var i = 0; i < obstacles.length; i++) {
+      var ob = obstacles[i];
+      if (x > ob.x - 5 && x < ob.x + ob.w + 5 && y > ob.y - 5 && y < ob.y + ob.h + 5) return true;
+    }
+    return false;
+  }
+
+  var rrtInterval = setInterval(function() {
+    if (nodeIdx >= totalNodes || goalReached) {
+      clearInterval(rrtInterval);
+      if (!goalReached) {
+        updateAllStatusMessages('path found | cost: ' + Math.round(Math.sqrt(Math.pow(goal.x - start.x, 2) + Math.pow(goal.y - start.y, 2))));
+      }
+      return;
+    }
+
+    // Random sample (biased toward goal)
+    var sample;
+    if (Math.random() < 0.2) {
+      sample = { x: goal.x, y: goal.y };
+    } else {
+      sample = {
+        x: margin + Math.random() * (w - margin * 2),
+        y: margin + Math.random() * (h - margin * 2 - 80)
+      };
+    }
+
+    // Find nearest node
+    var nearest = nodes[0];
+    var minDist = Infinity;
+    for (var ni = 0; ni < nodes.length; ni++) {
+      var d = Math.sqrt(Math.pow(nodes[ni].x - sample.x, 2) + Math.pow(nodes[ni].y - sample.y, 2));
+      if (d < minDist) {
+        minDist = d;
+        nearest = nodes[ni];
+      }
+    }
+
+    // Step toward sample
+    var dx = sample.x - nearest.x;
+    var dy = sample.y - nearest.y;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    var newX = nearest.x + (dx / dist) * Math.min(stepSize, dist);
+    var newY = nearest.y + (dy / dist) * Math.min(stepSize, dist);
+
+    if (!isColliding(newX, newY) && newX > 10 && newX < w - 10 && newY > 10 && newY < h - 80) {
+      var newNode = { x: newX, y: newY, parent: nearest };
+      nodes.push(newNode);
+      edges.push({ from: nearest, to: newNode });
+
+      // Draw branch
+      var branch = document.createElement('div');
+      branch.className = 'rrt-branch';
+      var bDx = newX - nearest.x;
+      var bDy = newY - nearest.y;
+      var bDist = Math.sqrt(bDx * bDx + bDy * bDy);
+      branch.style.left = nearest.x + 'px';
+      branch.style.top = nearest.y + 'px';
+      branch.style.width = bDist + 'px';
+      branch.style.transform = 'rotate(' + Math.atan2(bDy, bDx) + 'rad)';
+      radarOverlay.appendChild(branch);
+
+      // Draw node dot
+      var nodeDot = document.createElement('div');
+      nodeDot.className = 'rrt-node';
+      nodeDot.style.left = newX + 'px';
+      nodeDot.style.top = newY + 'px';
+      radarOverlay.appendChild(nodeDot);
+
+      updateAllStatusMessages('RRT: expanding... | nodes: ' + nodes.length);
+
+      // Check if goal reached
+      var distToGoal = Math.sqrt(Math.pow(newX - goal.x, 2) + Math.pow(newY - goal.y, 2));
+      if (distToGoal < goalThreshold) {
+        goalReached = true;
+        clearInterval(rrtInterval);
+
+        // Trace optimal path back and save waypoints
+        var pathNode = newNode;
+        var pathCost = 0;
+        var pathWaypoints = [];
+        pathWaypoints.push({ x: newX, y: newY });
+
+        while (pathNode.parent) {
+          var pLine = document.createElement('div');
+          pLine.className = 'rrt-path';
+          var pdx = pathNode.x - pathNode.parent.x;
+          var pdy = pathNode.y - pathNode.parent.y;
+          var pDist = Math.sqrt(pdx * pdx + pdy * pdy);
+          pathCost += pDist;
+          pLine.style.left = pathNode.parent.x + 'px';
+          pLine.style.top = pathNode.parent.y + 'px';
+          pLine.style.width = pDist + 'px';
+          pLine.style.transform = 'rotate(' + Math.atan2(pdy, pdx) + 'rad)';
+          radarOverlay.appendChild(pLine);
+          pathWaypoints.push({ x: pathNode.parent.x, y: pathNode.parent.y });
+          pathNode = pathNode.parent;
+        }
+
+        // Reverse to get start->goal order
+        pathWaypoints.reverse();
+        pathWaypoints.push({ x: goal.x, y: goal.y });
+
+        // Final segment to goal
+        var finalLine = document.createElement('div');
+        finalLine.className = 'rrt-path';
+        var fdx = goal.x - newX;
+        var fdy = goal.y - newY;
+        var fDist = Math.sqrt(fdx * fdx + fdy * fdy);
+        finalLine.style.left = newX + 'px';
+        finalLine.style.top = newY + 'px';
+        finalLine.style.width = fDist + 'px';
+        finalLine.style.transform = 'rotate(' + Math.atan2(fdy, fdx) + 'rad)';
+        radarOverlay.appendChild(finalLine);
+
+        updateAllStatusMessages('path found | cost: ' + Math.round(pathCost + fDist));
+
+        // Animate robot following path after delay
+        setTimeout(function() {
+          animateRobotFollower(pathWaypoints, goal);
+        }, 500);
+      }
+    }
+
+    nodeIdx++;
+  }, prefersReducedMotion ? 50 : 90);
+
+  function animateRobotFollower(waypoints, goal) {
+    if (!radarOverlay || waypoints.length < 2) return;
+
+    // Create robot dot
+    var robot = document.createElement('div');
+    robot.className = 'rrt-robot';
+    robot.style.left = waypoints[0].x + 'px';
+    robot.style.top = waypoints[0].y + 'px';
+    radarOverlay.appendChild(robot);
+
+    var currentSegment = 0;
+    var startTime = null;
+    var segmentDuration = prefersReducedMotion ? 150 : 250;
+    var totalSegments = waypoints.length - 1;
+
+    function animateRobot(timestamp) {
+      if (!startTime) startTime = timestamp;
+      var elapsed = timestamp - startTime;
+      var progress = Math.min(elapsed / segmentDuration, 1);
+
+      if (currentSegment >= totalSegments) {
+        updateAllStatusMessages('destination reached');
+        return;
+      }
+
+      var from = waypoints[currentSegment];
+      var to = waypoints[currentSegment + 1];
+      var dx = to.x - from.x;
+      var dy = to.y - from.y;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+
+      // Interpolate position
+      var x = from.x + dx * progress;
+      var y = from.y + dy * progress;
+      robot.style.left = x + 'px';
+      robot.style.top = y + 'px';
+
+      // Calculate and update orientation
+      var heading = Math.round(Math.atan2(dy, dx) * 180 / Math.PI);
+      if (heading < 0) heading += 360;
+      robot.style.setProperty('--robot-angle', (Math.atan2(dy, dx) - Math.PI / 2) + 'rad');
+
+      // Update status with velocity and heading
+      var velocity = (dist / (segmentDuration / 1000)).toFixed(1);
+      var progressPercent = Math.round((currentSegment / totalSegments) * 100);
+      updateAllStatusMessages('robot: progress ' + progressPercent + '% | vel: ' + velocity + ' m/s | hdg: ' + heading + '°');
+
+      if (progress < 1) {
+        requestAnimationFrame(animateRobot);
+      } else {
+        currentSegment++;
+        startTime = null;
+        requestAnimationFrame(animateRobot);
+      }
+    }
+
+    requestAnimationFrame(animateRobot);
+  }
+
+  var totalDuration = totalNodes * (prefersReducedMotion ? 50 : 90) + 4500;
+  setTimeout(function() {
+    clearInterval(rrtInterval);
+    radarOverlay.innerHTML = '';
+    updateAllStatusMessages(prev);
+    mlAnimating = false;
+  }, prefersReducedMotion ? totalDuration * 0.6 : totalDuration);
+}
+
+if (rrtBtn) rrtBtn.addEventListener('click', launchRRT);
 
 // ══════════════════════════════════════════
 // SIDE PANEL
@@ -547,13 +1015,13 @@ lightbox.addEventListener('touchend', function(e) {
 // TOP BAR: THEME + PALETTE (2-step model)
 // ══════════════════════════════════════════
 
-var toggleBg = document.getElementById('toggleBg');
 var toggleTheme = document.getElementById('toggleTheme');
+var toggleBg = document.getElementById('toggleBg');
 var themeColorMeta = document.querySelector('meta[name="theme-color"]');
 
 var paletteMap = {
   light: ['cream', 'rose', 'sky', 'sage', 'peach', 'lavender'],
-  dark: ['charcoal', 'warm-ink']
+  dark: ['claude']
 };
 
 var themeMetaColors = {
@@ -579,8 +1047,10 @@ function applyThemePalette() {
   document.body.classList.add('theme-' + currentTheme, 'palette-' + paletteName);
   toggleBg.title = 'Palette: ' + paletteName;
   toggleBg.setAttribute('aria-label', 'Cycle color palette. Current ' + paletteName);
-  toggleTheme.title = currentTheme === 'light' ? 'Switch to dark mode' : 'Switch to light mode';
-  toggleTheme.classList.toggle('active', currentTheme === 'dark');
+  if (toggleTheme) {
+    toggleTheme.title = currentTheme === 'light' ? 'Switch to dark mode' : 'Switch to light mode';
+    toggleTheme.classList.toggle('active', currentTheme === 'dark');
+  }
   if (themeColorMeta) {
     themeColorMeta.setAttribute('content', themeMetaColors[currentTheme]);
   }
@@ -598,7 +1068,7 @@ function cycleActiveThemePalette() {
 }
 
 toggleBg.addEventListener('click', cycleActiveThemePalette);
-toggleTheme.addEventListener('click', toggleThemeMode);
+if (toggleTheme) toggleTheme.addEventListener('click', toggleThemeMode);
 
 // ══════════════════════════════════════════
 // TOP BAR: LANGUAGE DROPDOWN
@@ -633,7 +1103,8 @@ langBtn.addEventListener('click', function(e) {
   e.stopPropagation();
   langDropdown.classList.toggle('open');
   // Close mail dropdown if open
-  document.getElementById('mailDropdown').classList.remove('open');
+  var mailDd = document.getElementById('mailDropdown');
+  if (mailDd) mailDd.classList.remove('open');
 });
 
 langOptions.forEach(function(opt) {
@@ -667,12 +1138,14 @@ var mailDropdown = document.getElementById('mailDropdown');
 var copyToast = document.getElementById('copyToast');
 var mailOptions = document.querySelectorAll('#mailDropdown .dropdown-option');
 
-mailBtn.addEventListener('click', function(e) {
-  e.stopPropagation();
-  mailDropdown.classList.toggle('open');
-  // Close lang dropdown if open
-  langDropdown.classList.remove('open');
-});
+if (mailBtn) {
+  mailBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (mailDropdown) mailDropdown.classList.toggle('open');
+    // Close lang dropdown if open
+    langDropdown.classList.remove('open');
+  });
+}
 
 mailOptions.forEach(function(opt) {
   opt.addEventListener('click', function(e) {
@@ -680,7 +1153,7 @@ mailOptions.forEach(function(opt) {
     var email = this.dataset.email;
     if (email) {
       copyToClipboard(email);
-      mailDropdown.classList.remove('open');
+      if (mailDropdown) mailDropdown.classList.remove('open');
     }
   });
 });
@@ -728,7 +1201,7 @@ function showCopyToast(msg) {
 document.addEventListener('click', function(e) {
   if (!e.target.closest('.dropdown-wrapper')) {
     langDropdown.classList.remove('open');
-    mailDropdown.classList.remove('open');
+    if (mailDropdown) mailDropdown.classList.remove('open');
   }
 });
 
@@ -765,7 +1238,6 @@ var statusMessages = [
   'focus mode: on'
 ];
 
-var statusMessage = document.getElementById('statusMessage');
 var currentStatusIdx = 0;
 
 var statusAnimating = false;
@@ -776,7 +1248,7 @@ statusMessage.addEventListener('click', function() {
   currentStatusIdx = (currentStatusIdx + 1) % statusMessages.length;
   statusMessage.style.opacity = 0;
   setTimeout(function() {
-    statusMessage.textContent = statusMessages[currentStatusIdx];
+    updateAllStatusMessages(statusMessages[currentStatusIdx]);
     statusMessage.style.opacity = 1;
     setTimeout(function() { statusAnimating = false; }, 300);
   }, 300);
@@ -797,68 +1269,6 @@ var urls = {
   github: 'https://github.com/SirBaldo'
 };
 
-function launchSignal() {
-  if (!radarOverlay || signalAnimating || radarAnimating) return;
-  signalAnimating = true;
-  radarOverlay.innerHTML = '';
-
-  var baseEl = document.querySelector('.status-bar') || signalBtn;
-  var baseRect = baseEl.getBoundingClientRect();
-  var centerX = Math.round(baseRect.left + baseRect.width * 0.6);
-  var centerY = Math.round(baseRect.top + baseRect.height * 0.35);
-  var rtt = 14 + Math.floor(Math.random() * 9);
-
-  if (prefersReducedMotion) {
-    var prevReduced = statusMessage.textContent;
-    statusMessage.textContent = 'UAV link stable | RL reward +0.84';
-    setTimeout(function() {
-      statusMessage.textContent = prevReduced;
-      signalAnimating = false;
-    }, 950);
-    return;
-  }
-
-  var prev = statusMessage.textContent;
-  statusMessage.textContent = 'UAV link: stable | RTT ' + rtt + 'ms';
-
-  var ping = document.createElement('div');
-  ping.className = 'signal-ping';
-  ping.style.left = centerX + 'px';
-  ping.style.top = centerY + 'px';
-  radarOverlay.appendChild(ping);
-
-  var pulse1 = document.createElement('div');
-  pulse1.className = 'signal-ring';
-  pulse1.style.left = centerX + 'px';
-  pulse1.style.top = centerY + 'px';
-  pulse1.style.animationDelay = '0s';
-  radarOverlay.appendChild(pulse1);
-
-  var pulse2 = document.createElement('div');
-  pulse2.className = 'signal-ring';
-  pulse2.style.left = centerX + 'px';
-  pulse2.style.top = centerY + 'px';
-  pulse2.style.animationDelay = '0.14s';
-  radarOverlay.appendChild(pulse2);
-
-  var rl = document.createElement('div');
-  rl.className = 'signal-rl-step';
-  rl.textContent = 'state -> action -> reward';
-  rl.style.left = Math.max(12, centerX - 130) + 'px';
-  rl.style.top = Math.max(12, centerY - 52) + 'px';
-  rl.style.animationDelay = '0.55s';
-  radarOverlay.appendChild(rl);
-
-  setTimeout(function() {
-    statusMessage.textContent = 'RL policy: converging';
-  }, 620);
-
-  setTimeout(function() {
-    radarOverlay.innerHTML = '';
-    statusMessage.textContent = prev;
-    signalAnimating = false;
-  }, 1480);
-}
 
 document.addEventListener('keydown', function(e) {
   // Cmd/Ctrl+K: open command palette
@@ -987,10 +1397,16 @@ function initMagneticHover() {
 }
 
 function initPortfolioExperience() {
-  applyNameStyleByPos(0);
+  var randomPos = Math.floor(Math.random() * nameStyleRegistry.length);
+  applyNameStyleByPos(randomPos);
+  currentNameStylePos = randomPos;
   applyThemePalette();
   initStaggeredReveal();
   initMagneticHover();
 }
 
 initPortfolioExperience();
+
+window.addEventListener('resize', function() {
+  requestAnimationFrame(fitNameToContainer);
+});
