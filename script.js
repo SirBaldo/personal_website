@@ -115,35 +115,287 @@ if (reducedMotionQuery.addEventListener) {
 // ══════════════════════════════════════════
 
 var profilePhotoWrapper = document.getElementById('profilePhoto');
-var photoBackdrop = document.getElementById('photoBackdrop');
+var profilePhotoElement = profilePhotoWrapper ? profilePhotoWrapper.querySelector('.profile-photo') : null;
+var photoFocusLayer = document.getElementById('photoFocusLayer');
+var photoFocusContent = photoFocusLayer ? photoFocusLayer.querySelector('.photo-focus-content') : null;
+var photoFocusImage = document.getElementById('photoFocusImage');
+var photoFocusCaption = document.getElementById('photoFocusCaption');
+var photoFocusCloseBtn = document.getElementById('photoFocusClose');
+var photoHoverTimerId = null;
+var photoFocusMouseLeaveTimerId = null;
+var photoFocusAnimImage = null;
+var photoFocusAnimHandle = null;
+var PHOTO_HOVER_OPEN_DELAY_MS = 1000;
+var PHOTO_MOUSELEAVE_CLOSE_DELAY_MS = 250;
+var PHOTO_FOCUS_OPEN_MS = 480;
+var PHOTO_FOCUS_CLOSE_MS = 420;
+var PHOTO_FOCUS_EASING = 'cubic-bezier(0.22, 0.78, 0.16, 1)';
+var isCoarsePointer = window.matchMedia('(hover: none), (pointer: coarse)').matches;
 
-function togglePhotoExpand() {
-  var isExpanded = profilePhotoWrapper.classList.contains('photo-expanded');
-  if (isExpanded) {
-    closePhotoExpand();
+function isPhotoFocusOpen() {
+  return document.body.classList.contains('photo-focus-opening') ||
+    document.body.classList.contains('photo-focus-active') ||
+    document.body.classList.contains('photo-focus-closing');
+}
+
+function cancelProfileHoverOpen() {
+  if (photoHoverTimerId) {
+    clearTimeout(photoHoverTimerId);
+    photoHoverTimerId = null;
+  }
+}
+
+function cancelPhotoFocusMouseLeaveClose() {
+  if (photoFocusMouseLeaveTimerId) {
+    clearTimeout(photoFocusMouseLeaveTimerId);
+    photoFocusMouseLeaveTimerId = null;
+  }
+}
+
+function schedulePhotoFocusMouseLeaveClose() {
+  if (isCoarsePointer || !document.body.classList.contains('photo-focus-active')) return;
+  cancelPhotoFocusMouseLeaveClose();
+  photoFocusMouseLeaveTimerId = setTimeout(function() {
+    closeProfileFocus();
+  }, PHOTO_MOUSELEAVE_CLOSE_DELAY_MS);
+}
+
+function syncProfileFocusContent() {
+  if (!profilePhotoElement || !photoFocusImage) return;
+  photoFocusImage.src = profilePhotoElement.currentSrc || profilePhotoElement.src;
+  photoFocusImage.alt = profilePhotoElement.alt || 'Profile photo';
+  if (photoFocusCaption) {
+    photoFocusCaption.textContent = 'Whatcha looking at?';
+  }
+}
+
+function getElementRect(el) {
+  if (!el) return null;
+  var rect = el.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return null;
+  return rect;
+}
+
+function clearPhotoFocusClasses() {
+  document.body.classList.remove('photo-focus-opening', 'photo-focus-active', 'photo-focus-closing');
+}
+
+function setPhotoFocusImageVisibility(hidden) {
+  if (!photoFocusImage) return;
+  if (hidden) {
+    photoFocusImage.style.opacity = '0';
+    photoFocusImage.style.visibility = 'hidden';
   } else {
-    profilePhotoWrapper.classList.add('photo-expanded');
-    photoBackdrop.classList.add('active');
+    photoFocusImage.style.opacity = '';
+    photoFocusImage.style.visibility = '';
   }
 }
 
-function closePhotoExpand() {
-  profilePhotoWrapper.classList.remove('photo-expanded');
-  photoBackdrop.classList.remove('active');
+function stopPhotoFocusAnimation() {
+  if (photoFocusAnimHandle && typeof photoFocusAnimHandle.cancel === 'function') {
+    photoFocusAnimHandle.cancel();
+  }
+  photoFocusAnimHandle = null;
 }
 
-profilePhotoWrapper.addEventListener('click', function(e) {
-  e.stopPropagation();
-  togglePhotoExpand();
-});
-
-photoBackdrop.addEventListener('click', closePhotoExpand);
-
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape' && profilePhotoWrapper.classList.contains('photo-expanded')) {
-    closePhotoExpand();
+function removePhotoFocusAnimImage() {
+  stopPhotoFocusAnimation();
+  if (photoFocusAnimImage && photoFocusAnimImage.parentNode) {
+    photoFocusAnimImage.parentNode.removeChild(photoFocusAnimImage);
   }
-});
+  photoFocusAnimImage = null;
+}
+
+function createPhotoFocusAnimImage(rect) {
+  if (!rect || !profilePhotoElement) return null;
+  removePhotoFocusAnimImage();
+  var clone = document.createElement('img');
+  clone.className = 'photo-focus-anim-image';
+  clone.src = profilePhotoElement.currentSrc || profilePhotoElement.src;
+  clone.alt = profilePhotoElement.alt || 'Profile photo';
+  clone.style.left = rect.left + 'px';
+  clone.style.top = rect.top + 'px';
+  clone.style.width = rect.width + 'px';
+  clone.style.height = rect.height + 'px';
+  document.body.appendChild(clone);
+  photoFocusAnimImage = clone;
+  return clone;
+}
+
+function animatePhotoFocusClone(clone, fromRect, toRect, duration, done) {
+  if (!clone || !fromRect || !toRect || prefersReducedMotion) {
+    if (done) done();
+    return;
+  }
+  if (typeof clone.animate === 'function') {
+    photoFocusAnimHandle = clone.animate([
+      { left: fromRect.left + 'px', top: fromRect.top + 'px', width: fromRect.width + 'px', height: fromRect.height + 'px' },
+      { left: toRect.left + 'px', top: toRect.top + 'px', width: toRect.width + 'px', height: toRect.height + 'px' }
+    ], {
+      duration: duration,
+      easing: PHOTO_FOCUS_EASING,
+      fill: 'forwards'
+    });
+    photoFocusAnimHandle.onfinish = function() {
+      photoFocusAnimHandle = null;
+      if (done) done();
+    };
+    photoFocusAnimHandle.oncancel = function() {
+      photoFocusAnimHandle = null;
+    };
+    return;
+  }
+  clone.style.transition = 'left ' + duration + 'ms ' + PHOTO_FOCUS_EASING + ', top ' + duration + 'ms ' + PHOTO_FOCUS_EASING + ', width ' + duration + 'ms ' + PHOTO_FOCUS_EASING + ', height ' + duration + 'ms ' + PHOTO_FOCUS_EASING;
+  requestAnimationFrame(function() {
+    clone.style.left = toRect.left + 'px';
+    clone.style.top = toRect.top + 'px';
+    clone.style.width = toRect.width + 'px';
+    clone.style.height = toRect.height + 'px';
+  });
+  setTimeout(function() {
+    if (done) done();
+  }, duration);
+}
+
+function openProfileFocus() {
+  if (isPhotoFocusOpen() || !photoFocusLayer) return;
+  cancelProfileHoverOpen();
+  cancelPhotoFocusMouseLeaveClose();
+  syncProfileFocusContent();
+  clearPhotoFocusClasses();
+  document.body.classList.add('photo-focus-opening');
+  photoFocusLayer.setAttribute('aria-hidden', 'false');
+  photoFocusLayer.classList.add('open');
+  setPhotoFocusImageVisibility(true);
+
+  if (prefersReducedMotion || !profilePhotoElement || !photoFocusImage) {
+    document.body.classList.remove('photo-focus-opening');
+    document.body.classList.add('photo-focus-active');
+    setPhotoFocusImageVisibility(false);
+    return;
+  }
+
+  var startRect = getElementRect(profilePhotoElement);
+  if (!startRect) {
+    document.body.classList.remove('photo-focus-opening');
+    document.body.classList.add('photo-focus-active');
+    setPhotoFocusImageVisibility(false);
+    return;
+  }
+
+  requestAnimationFrame(function() {
+    var targetRect = getElementRect(photoFocusImage);
+    if (!targetRect) {
+      document.body.classList.remove('photo-focus-opening');
+      document.body.classList.add('photo-focus-active');
+      setPhotoFocusImageVisibility(false);
+      return;
+    }
+    var clone = createPhotoFocusAnimImage(startRect);
+    animatePhotoFocusClone(clone, startRect, targetRect, PHOTO_FOCUS_OPEN_MS, function() {
+      removePhotoFocusAnimImage();
+      setPhotoFocusImageVisibility(false);
+      document.body.classList.remove('photo-focus-opening');
+      document.body.classList.add('photo-focus-active');
+    });
+  });
+}
+
+function closeProfileFocus() {
+  cancelProfileHoverOpen();
+  cancelPhotoFocusMouseLeaveClose();
+  if (!photoFocusLayer) return;
+  if (!isPhotoFocusOpen()) return;
+
+  if (prefersReducedMotion || !profilePhotoElement || !photoFocusImage) {
+    removePhotoFocusAnimImage();
+    photoFocusLayer.classList.remove('open');
+    photoFocusLayer.setAttribute('aria-hidden', 'true');
+    clearPhotoFocusClasses();
+    setPhotoFocusImageVisibility(false);
+    return;
+  }
+
+  var startRect = photoFocusAnimImage ? getElementRect(photoFocusAnimImage) : getElementRect(photoFocusImage);
+  var endRect = getElementRect(profilePhotoElement);
+  if (photoFocusAnimImage && photoFocusAnimHandle) {
+    var liveRect = getElementRect(photoFocusAnimImage);
+    stopPhotoFocusAnimation();
+    if (liveRect) {
+      photoFocusAnimImage.style.left = liveRect.left + 'px';
+      photoFocusAnimImage.style.top = liveRect.top + 'px';
+      photoFocusAnimImage.style.width = liveRect.width + 'px';
+      photoFocusAnimImage.style.height = liveRect.height + 'px';
+      startRect = liveRect;
+    }
+  }
+
+  clearPhotoFocusClasses();
+  document.body.classList.add('photo-focus-closing');
+
+  function finishClose() {
+    removePhotoFocusAnimImage();
+    photoFocusLayer.classList.remove('open');
+    photoFocusLayer.setAttribute('aria-hidden', 'true');
+    clearPhotoFocusClasses();
+    setPhotoFocusImageVisibility(false);
+  }
+
+  if (!startRect || !endRect) {
+    setTimeout(finishClose, 160);
+    return;
+  }
+
+  setPhotoFocusImageVisibility(true);
+  var clone = photoFocusAnimImage || createPhotoFocusAnimImage(startRect);
+  animatePhotoFocusClone(clone, startRect, endRect, PHOTO_FOCUS_CLOSE_MS, finishClose);
+}
+
+function scheduleProfileHoverOpen() {
+  if (isCoarsePointer || isPhotoFocusOpen()) return;
+  cancelProfileHoverOpen();
+  photoHoverTimerId = setTimeout(function() {
+    openProfileFocus();
+    photoHoverTimerId = null;
+  }, PHOTO_HOVER_OPEN_DELAY_MS);
+}
+
+function toggleProfileFocus() {
+  if (isPhotoFocusOpen()) {
+    closeProfileFocus();
+  } else {
+    openProfileFocus();
+  }
+}
+
+if (profilePhotoWrapper) {
+  profilePhotoWrapper.addEventListener('click', function(e) {
+    e.stopPropagation();
+    toggleProfileFocus();
+  });
+
+  if (!isCoarsePointer) {
+    profilePhotoWrapper.addEventListener('mouseenter', scheduleProfileHoverOpen);
+    profilePhotoWrapper.addEventListener('mouseleave', cancelProfileHoverOpen);
+  }
+}
+
+if (photoFocusCloseBtn) {
+  photoFocusCloseBtn.addEventListener('click', closeProfileFocus);
+}
+
+if (photoFocusLayer) {
+  photoFocusLayer.addEventListener('click', function(e) {
+    if (e.target === photoFocusLayer) {
+      closeProfileFocus();
+    }
+  });
+}
+
+if (photoFocusContent && !isCoarsePointer) {
+  photoFocusContent.addEventListener('mouseenter', cancelPhotoFocusMouseLeaveClose);
+  photoFocusContent.addEventListener('mouseleave', schedulePhotoFocusMouseLeaveClose);
+}
 
 // ══════════════════════════════════════════
 // NAME STYLE CYCLING (curated set)
@@ -173,15 +425,6 @@ var brailleMap = {
   z: '\u2835'
 };
 
-var signLanguageMap = {
-  a: '🤜', b: '✋', c: '👌', d: '☝️', e: '🤙',
-  f: '✌️', g: '🤞', h: '👆', i: '🖖', j: '👍',
-  k: '✊', l: '🤘', m: '🤟', n: '🖐️', o: '👋',
-  p: '🤚', q: '👐', r: '🙌', s: '🤲', t: '🙏',
-  u: '👏', v: '🤝', w: '👊', x: '✍️', y: '🖕',
-  z: '🤛'
-};
-
 var nameStyleRegistry = [
   { id: 1, className: 'name-style-1', render: renderClaudeBlocksName },
   { id: 2, className: 'name-style-2', render: renderPlainName },
@@ -190,8 +433,7 @@ var nameStyleRegistry = [
   { id: 6, className: 'name-style-6', render: renderTelemetryName },
   { id: 7, className: 'name-style-7', render: renderMissionStampName },
   { id: 9, className: 'name-style-9', render: renderBrailleOnlyName },
-  { id: 13, className: 'name-style-13', render: renderMonolineEngraveName },
-  { id: 20, className: 'name-style-20', render: renderSignLanguageName }
+  { id: 13, className: 'name-style-13', render: renderMonolineEngraveName }
 ];
 
 function renderPlainName() {
@@ -270,23 +512,6 @@ function renderBrailleOnlyName() {
   nameClick.innerHTML = '<span class="braille-label">braille:</span> <span class="braille-text">' + nameToBraille(NAME_TEXT) + '</span>';
 }
 
-function getSignLanguageChar(letter) {
-  var normalized = letter.toLowerCase();
-  return signLanguageMap[normalized] || '✋';
-}
-
-function nameToSignLanguage(text) {
-  return text.split('').map(function(letter) {
-    if (letter === ' ') return '   ';
-    return getSignLanguageChar(letter);
-  }).join(' ');
-}
-
-function renderSignLanguageName() {
-  nameClick.classList.add('sign-language-style');
-  nameClick.innerHTML = '<span class="sign-language-label">sign language:</span> <span class="sign-language-text">' + nameToSignLanguage(NAME_TEXT) + '</span>';
-}
-
 function renderMonolineEngraveName() {
   renderNameByLetter('monoline-letter');
 }
@@ -349,6 +574,9 @@ var statusMessage = document.getElementById('statusMessage');
 var radarAnimating = false;
 var mlAnimating = false;
 var rocketLaunching = false;
+var ROCKET_LAUNCH_MS = 2900;
+var ROCKET_PRELAUNCH_MS = 700;
+var ROCKET_PARTICLE_COUNT = 28;
 
 function updateAllStatusMessages(text) {
   if (statusMessage) statusMessage.textContent = text;
@@ -368,7 +596,7 @@ function launchRocket() {
   setTimeout(function() {
     rocketContainer.classList.remove('launching');
     rocketLaunching = false;
-  }, 2200);
+  }, ROCKET_LAUNCH_MS);
 }
 
 ignitionBtn.addEventListener('click', launchRocket);
@@ -377,16 +605,26 @@ if (radarBtn) {
 }
 
 function createParticles(x, y) {
-  var count = 20;
+  var count = ROCKET_PARTICLE_COUNT;
+  var ignitionSpreadCount = Math.max(6, Math.round(count * 0.35));
+  var delayStep = Math.max(22, Math.round((ROCKET_PRELAUNCH_MS + 320) / count));
   for (var i = 0; i < count; i++) {
     (function(idx) {
+      var inGroundPhase = idx < ignitionSpreadCount;
+      var emissionDelay = inGroundPhase
+        ? idx * 18
+        : ignitionSpreadCount * 18 + (idx - ignitionSpreadCount) * delayStep;
       setTimeout(function() {
         var p = document.createElement('div');
         p.className = 'particle';
-        var ox = (Math.random() - 0.5) * 24;
-        var oy = Math.random() * 16;
+        var ox = (Math.random() - 0.5) * (inGroundPhase ? 46 : 28);
+        var oy = inGroundPhase ? Math.random() * 10 : Math.random() * 18;
+        var dx = (Math.random() - 0.5) * (inGroundPhase ? 84 : 34);
+        var dy = (inGroundPhase ? 56 : 96) + Math.random() * (inGroundPhase ? 36 : 52);
         p.style.left = (x + ox) + 'px';
-        p.style.top = (y + oy + idx * 4) + 'px';
+        p.style.top = (y + oy + idx * 2.8) + 'px';
+        p.style.setProperty('--dx', dx.toFixed(2) + 'px');
+        p.style.setProperty('--dy', dy.toFixed(2) + 'px');
         var size = 2 + Math.random() * 4;
         p.style.width = size + 'px';
         p.style.height = size + 'px';
@@ -395,7 +633,7 @@ function createParticles(x, y) {
         document.body.appendChild(p);
         setTimeout(function() { p.classList.add('animate'); }, 10);
         setTimeout(function() { p.remove(); }, 800);
-      }, idx * 40);
+      }, emissionDelay);
     })(i);
   }
 }
@@ -404,6 +642,7 @@ function launchRadarGraph() {
   if (!radarOverlay || radarAnimating || mlAnimating) return;
   radarAnimating = true;
   radarOverlay.innerHTML = '';
+  radarOverlay.classList.remove('qlearn-mode');
 
   var w = window.innerWidth;
   var h = window.innerHeight;
@@ -474,6 +713,13 @@ function randomRange(min, max) {
 // ══════════════════════════════════════════
 
 var qlearnBtn = document.getElementById('qlearnBtn');
+var rrtBtn = document.getElementById('rrtBtn');
+
+function setAlgoButtonState(button, active) {
+  if (!button) return;
+  button.classList.toggle('ml-active', active);
+  button.setAttribute('aria-pressed', active ? 'true' : 'false');
+}
 
 function isAnyAnimating() {
   return radarAnimating || mlAnimating;
@@ -485,6 +731,9 @@ function launchQLearning() {
   if (!radarOverlay || isAnyAnimating()) return;
   mlAnimating = true;
   radarOverlay.innerHTML = '';
+  radarOverlay.classList.add('qlearn-mode');
+  setAlgoButtonState(qlearnBtn, true);
+  setAlgoButtonState(rrtBtn, false);
 
   var isMobile = window.matchMedia('(max-width: 768px)').matches;
   var gridSize = isMobile ? 4 : 5;
@@ -494,12 +743,17 @@ function launchQLearning() {
   var prev = statusMessage.textContent;
   updateAllStatusMessages('exploring... | epsilon: 0.8');
 
+  var frame = document.createElement('div');
+  frame.className = 'qlearn-frame';
+  frame.style.width = gridW + 'px';
+  frame.style.height = gridH + 'px';
+
   var grid = document.createElement('div');
   grid.className = 'q-grid';
-  grid.style.width = gridW + 'px';
-  grid.style.height = gridH + 'px';
   grid.style.gridTemplateColumns = 'repeat(' + gridSize + ', ' + cellSize + 'px)';
   grid.style.gridTemplateRows = 'repeat(' + gridSize + ', ' + cellSize + 'px)';
+  frame.appendChild(grid);
+  radarOverlay.appendChild(frame);
 
   var cells = [];
   for (var r = 0; r < gridSize; r++) {
@@ -512,7 +766,8 @@ function launchQLearning() {
       cells.push(cell);
     }
   }
-  radarOverlay.appendChild(grid);
+  if (cells[0]) cells[0].classList.add('q-start');
+  if (cells[cells.length - 1]) cells[cells.length - 1].classList.add('q-goal-cell');
 
   var agent = document.createElement('div');
   agent.className = 'q-agent';
@@ -601,6 +856,8 @@ function launchQLearning() {
 
   setTimeout(function() {
     radarOverlay.innerHTML = '';
+    radarOverlay.classList.remove('qlearn-mode');
+    setAlgoButtonState(qlearnBtn, false);
     updateAllStatusMessages(prev);
     mlAnimating = false;
   }, prefersReducedMotion ? totalDuration * 0.6 : totalDuration);
@@ -612,24 +869,39 @@ if (qlearnBtn) qlearnBtn.addEventListener('click', launchQLearning);
 
 // ── RRT Path Planning ──
 
-var rrtBtn = document.getElementById('rrtBtn');
-
 function launchRRT() {
   if (!radarOverlay || isAnyAnimating()) return;
   mlAnimating = true;
   radarOverlay.innerHTML = '';
+  radarOverlay.classList.remove('qlearn-mode');
+  setAlgoButtonState(rrtBtn, true);
+  setAlgoButtonState(qlearnBtn, false);
 
   var w = window.innerWidth;
   var h = window.innerHeight;
   var isMobile = window.matchMedia('(max-width: 768px)').matches;
   var prev = statusMessage.textContent;
-  var margin = 80;
 
-  // Start and goal
-  var start = { x: margin + 20, y: h - margin - 40 };
-  var goal = { x: w - margin - 20, y: margin + 40 };
+  var mapW = Math.round(Math.min(isMobile ? w * 0.88 : w * 0.56, isMobile ? 340 : 620));
+  var mapH = Math.round(Math.min(isMobile ? h * 0.42 : h * 0.5, isMobile ? 260 : 420));
+  var mapLeft = Math.round((w - mapW) / 2);
+  var mapTop = Math.round((h - mapH) / 2);
+  var mapRight = mapLeft + mapW;
+  var mapBottom = mapTop + mapH;
+  var framePadding = isMobile ? 28 : 34;
+  var pointPadding = 8;
 
-  // Draw start and goal markers
+  var start = { x: mapLeft + framePadding, y: mapBottom - framePadding };
+  var goal = { x: mapRight - framePadding, y: mapTop + framePadding };
+
+  var frame = document.createElement('div');
+  frame.className = 'rrt-frame';
+  frame.style.left = mapLeft + 'px';
+  frame.style.top = mapTop + 'px';
+  frame.style.width = mapW + 'px';
+  frame.style.height = mapH + 'px';
+  radarOverlay.appendChild(frame);
+
   var startEl = document.createElement('div');
   startEl.className = 'rrt-node rrt-start';
   startEl.style.left = start.x + 'px';
@@ -642,167 +914,144 @@ function launchRRT() {
   goalEl.style.top = goal.y + 'px';
   radarOverlay.appendChild(goalEl);
 
-  // Random obstacles
-  var obstacleCount = isMobile ? 3 : 4;
+  var obstacleCount = isMobile ? 4 : 5;
+  var obstacleSpacing = isMobile ? 12 : 16;
   var obstacles = [];
-  for (var oi = 0; oi < obstacleCount; oi++) {
-    var ox = margin + 60 + Math.random() * (w - margin * 2 - 120);
-    var oy = margin + 40 + Math.random() * (h - margin * 2 - 160);
-    var ow = 40 + Math.random() * 60;
-    var oh = 30 + Math.random() * 50;
-    obstacles.push({ x: ox, y: oy, w: ow, h: oh });
-    var obsEl = document.createElement('div');
-    obsEl.className = 'rrt-obstacle';
-    obsEl.style.left = ox + 'px';
-    obsEl.style.top = oy + 'px';
-    obsEl.style.width = ow + 'px';
-    obsEl.style.height = oh + 'px';
-    radarOverlay.appendChild(obsEl);
-  }
-
-  // RRT tree expansion
-  var nodes = [start];
-  var edges = [];
-  var totalNodes = prefersReducedMotion ? 15 : 35;
-  var stepSize = isMobile ? 35 : 50;
-  var nodeIdx = 0;
-  var goalReached = false;
-  var goalThreshold = 60;
-
-  updateAllStatusMessages('RRT: expanding... | nodes: 1');
-
-  function isColliding(x, y) {
-    for (var i = 0; i < obstacles.length; i++) {
-      var ob = obstacles[i];
-      if (x > ob.x - 5 && x < ob.x + ob.w + 5 && y > ob.y - 5 && y < ob.y + ob.h + 5) return true;
+  function isOverlappingObstacle(candidate) {
+    for (var oi = 0; oi < obstacles.length; oi++) {
+      var ob = obstacles[oi];
+      var separated =
+        candidate.x + candidate.w + obstacleSpacing < ob.x ||
+        ob.x + ob.w + obstacleSpacing < candidate.x ||
+        candidate.y + candidate.h + obstacleSpacing < ob.y ||
+        ob.y + ob.h + obstacleSpacing < candidate.y;
+      if (!separated) return true;
     }
     return false;
   }
 
-  var rrtInterval = setInterval(function() {
-    if (nodeIdx >= totalNodes || goalReached) {
-      clearInterval(rrtInterval);
-      if (!goalReached) {
-        updateAllStatusMessages('path found | cost: ' + Math.round(Math.sqrt(Math.pow(goal.x - start.x, 2) + Math.pow(goal.y - start.y, 2))));
-      }
+  for (var oi = 0; oi < obstacleCount; oi++) {
+    var placed = false;
+    var attempts = 0;
+    while (!placed && attempts < 48) {
+      attempts++;
+      var ow = randomRange(isMobile ? 30 : 40, isMobile ? 58 : 96);
+      var oh = randomRange(isMobile ? 24 : 30, isMobile ? 46 : 68);
+      var ox = randomRange(mapLeft + 16, mapRight - ow - 16);
+      var oy = randomRange(mapTop + 16, mapBottom - oh - 16);
+      var centerX = ox + ow / 2;
+      var centerY = oy + oh / 2;
+      var farFromStart = Math.hypot(centerX - start.x, centerY - start.y) > (isMobile ? 48 : 62);
+      var farFromGoal = Math.hypot(centerX - goal.x, centerY - goal.y) > (isMobile ? 48 : 62);
+      var candidate = { x: ox, y: oy, w: ow, h: oh };
+      if (!farFromStart || !farFromGoal) continue;
+      if (isOverlappingObstacle(candidate)) continue;
+
+      obstacles.push(candidate);
+      var obsEl = document.createElement('div');
+      obsEl.className = 'rrt-obstacle';
+      obsEl.style.left = ox + 'px';
+      obsEl.style.top = oy + 'px';
+      obsEl.style.width = ow + 'px';
+      obsEl.style.height = oh + 'px';
+      radarOverlay.appendChild(obsEl);
+      placed = true;
+    }
+  }
+
+  var nodes = [start];
+  var totalNodes = prefersReducedMotion ? (isMobile ? 12 : 16) : (isMobile ? 22 : 30);
+  var stepSize = isMobile ? 28 : 36;
+  var nodeIdx = 0;
+  var goalReached = false;
+  var goalThreshold = isMobile ? 52 : 62;
+  var goalBias = prefersReducedMotion ? 0.3 : 0.38;
+  var tickMs = prefersReducedMotion ? 42 : 32;
+  var cleanupTimeoutId = null;
+
+  updateAllStatusMessages('RRT: expanding... | nodes: 1');
+
+  function cleanupRRT() {
+    if (cleanupTimeoutId) {
+      clearTimeout(cleanupTimeoutId);
+      cleanupTimeoutId = null;
+    }
+    radarOverlay.innerHTML = '';
+    radarOverlay.classList.remove('qlearn-mode');
+    setAlgoButtonState(rrtBtn, false);
+    updateAllStatusMessages(prev);
+    mlAnimating = false;
+  }
+
+  function isCollidingPoint(x, y) {
+    for (var i = 0; i < obstacles.length; i++) {
+      var ob = obstacles[i];
+      if (x > ob.x - 4 && x < ob.x + ob.w + 4 && y > ob.y - 4 && y < ob.y + ob.h + 4) return true;
+    }
+    return false;
+  }
+
+  function isSegmentColliding(a, b) {
+    var dx = b.x - a.x;
+    var dy = b.y - a.y;
+    var distance = Math.sqrt(dx * dx + dy * dy);
+    var steps = Math.max(4, Math.ceil(distance / 10));
+    for (var s = 0; s <= steps; s++) {
+      var t = s / steps;
+      var px = a.x + dx * t;
+      var py = a.y + dy * t;
+      if (isCollidingPoint(px, py)) return true;
+    }
+    return false;
+  }
+
+  function drawSegment(className, from, to) {
+    var seg = document.createElement('div');
+    seg.className = className;
+    var dx = to.x - from.x;
+    var dy = to.y - from.y;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    seg.style.left = from.x + 'px';
+    seg.style.top = from.y + 'px';
+    seg.style.width = dist + 'px';
+    seg.style.transform = 'rotate(' + Math.atan2(dy, dx) + 'rad)';
+    radarOverlay.appendChild(seg);
+    return dist;
+  }
+
+  function tracePathWaypoints(node) {
+    var traced = [];
+    var current = node;
+    while (current) {
+      traced.push({ x: current.x, y: current.y });
+      current = current.parent;
+    }
+    traced.reverse();
+    return traced;
+  }
+
+  function computePathCost(waypoints) {
+    var total = 0;
+    for (var i = 1; i < waypoints.length; i++) {
+      var dx = waypoints[i].x - waypoints[i - 1].x;
+      var dy = waypoints[i].y - waypoints[i - 1].y;
+      total += Math.sqrt(dx * dx + dy * dy);
+    }
+    return total;
+  }
+
+  function drawPathSegments(waypoints) {
+    for (var i = 1; i < waypoints.length; i++) {
+      drawSegment('rrt-path', waypoints[i - 1], waypoints[i]);
+    }
+  }
+
+  function animateRobotFollower(waypoints, onDone) {
+    if (!radarOverlay || waypoints.length < 2) {
+      if (onDone) onDone();
       return;
     }
 
-    // Random sample (biased toward goal)
-    var sample;
-    if (Math.random() < 0.2) {
-      sample = { x: goal.x, y: goal.y };
-    } else {
-      sample = {
-        x: margin + Math.random() * (w - margin * 2),
-        y: margin + Math.random() * (h - margin * 2 - 80)
-      };
-    }
-
-    // Find nearest node
-    var nearest = nodes[0];
-    var minDist = Infinity;
-    for (var ni = 0; ni < nodes.length; ni++) {
-      var d = Math.sqrt(Math.pow(nodes[ni].x - sample.x, 2) + Math.pow(nodes[ni].y - sample.y, 2));
-      if (d < minDist) {
-        minDist = d;
-        nearest = nodes[ni];
-      }
-    }
-
-    // Step toward sample
-    var dx = sample.x - nearest.x;
-    var dy = sample.y - nearest.y;
-    var dist = Math.sqrt(dx * dx + dy * dy);
-    var newX = nearest.x + (dx / dist) * Math.min(stepSize, dist);
-    var newY = nearest.y + (dy / dist) * Math.min(stepSize, dist);
-
-    if (!isColliding(newX, newY) && newX > 10 && newX < w - 10 && newY > 10 && newY < h - 80) {
-      var newNode = { x: newX, y: newY, parent: nearest };
-      nodes.push(newNode);
-      edges.push({ from: nearest, to: newNode });
-
-      // Draw branch
-      var branch = document.createElement('div');
-      branch.className = 'rrt-branch';
-      var bDx = newX - nearest.x;
-      var bDy = newY - nearest.y;
-      var bDist = Math.sqrt(bDx * bDx + bDy * bDy);
-      branch.style.left = nearest.x + 'px';
-      branch.style.top = nearest.y + 'px';
-      branch.style.width = bDist + 'px';
-      branch.style.transform = 'rotate(' + Math.atan2(bDy, bDx) + 'rad)';
-      radarOverlay.appendChild(branch);
-
-      // Draw node dot
-      var nodeDot = document.createElement('div');
-      nodeDot.className = 'rrt-node';
-      nodeDot.style.left = newX + 'px';
-      nodeDot.style.top = newY + 'px';
-      radarOverlay.appendChild(nodeDot);
-
-      updateAllStatusMessages('RRT: expanding... | nodes: ' + nodes.length);
-
-      // Check if goal reached
-      var distToGoal = Math.sqrt(Math.pow(newX - goal.x, 2) + Math.pow(newY - goal.y, 2));
-      if (distToGoal < goalThreshold) {
-        goalReached = true;
-        clearInterval(rrtInterval);
-
-        // Trace optimal path back and save waypoints
-        var pathNode = newNode;
-        var pathCost = 0;
-        var pathWaypoints = [];
-        pathWaypoints.push({ x: newX, y: newY });
-
-        while (pathNode.parent) {
-          var pLine = document.createElement('div');
-          pLine.className = 'rrt-path';
-          var pdx = pathNode.x - pathNode.parent.x;
-          var pdy = pathNode.y - pathNode.parent.y;
-          var pDist = Math.sqrt(pdx * pdx + pdy * pdy);
-          pathCost += pDist;
-          pLine.style.left = pathNode.parent.x + 'px';
-          pLine.style.top = pathNode.parent.y + 'px';
-          pLine.style.width = pDist + 'px';
-          pLine.style.transform = 'rotate(' + Math.atan2(pdy, pdx) + 'rad)';
-          radarOverlay.appendChild(pLine);
-          pathWaypoints.push({ x: pathNode.parent.x, y: pathNode.parent.y });
-          pathNode = pathNode.parent;
-        }
-
-        // Reverse to get start->goal order
-        pathWaypoints.reverse();
-        pathWaypoints.push({ x: goal.x, y: goal.y });
-
-        // Final segment to goal
-        var finalLine = document.createElement('div');
-        finalLine.className = 'rrt-path';
-        var fdx = goal.x - newX;
-        var fdy = goal.y - newY;
-        var fDist = Math.sqrt(fdx * fdx + fdy * fdy);
-        finalLine.style.left = newX + 'px';
-        finalLine.style.top = newY + 'px';
-        finalLine.style.width = fDist + 'px';
-        finalLine.style.transform = 'rotate(' + Math.atan2(fdy, fdx) + 'rad)';
-        radarOverlay.appendChild(finalLine);
-
-        updateAllStatusMessages('path found | cost: ' + Math.round(pathCost + fDist));
-
-        // Animate robot following path after delay
-        setTimeout(function() {
-          animateRobotFollower(pathWaypoints, goal);
-        }, 500);
-      }
-    }
-
-    nodeIdx++;
-  }, prefersReducedMotion ? 50 : 90);
-
-  function animateRobotFollower(waypoints, goal) {
-    if (!radarOverlay || waypoints.length < 2) return;
-
-    // Create robot dot
     var robot = document.createElement('div');
     robot.className = 'rrt-robot';
     robot.style.left = waypoints[0].x + 'px';
@@ -811,7 +1060,7 @@ function launchRRT() {
 
     var currentSegment = 0;
     var startTime = null;
-    var segmentDuration = prefersReducedMotion ? 150 : 250;
+    var segmentDuration = prefersReducedMotion ? 100 : 140;
     var totalSegments = waypoints.length - 1;
 
     function animateRobot(timestamp) {
@@ -821,6 +1070,7 @@ function launchRRT() {
 
       if (currentSegment >= totalSegments) {
         updateAllStatusMessages('destination reached');
+        if (onDone) onDone();
         return;
       }
 
@@ -830,20 +1080,17 @@ function launchRRT() {
       var dy = to.y - from.y;
       var dist = Math.sqrt(dx * dx + dy * dy);
 
-      // Interpolate position
       var x = from.x + dx * progress;
       var y = from.y + dy * progress;
       robot.style.left = x + 'px';
       robot.style.top = y + 'px';
 
-      // Calculate and update orientation
       var heading = Math.round(Math.atan2(dy, dx) * 180 / Math.PI);
       if (heading < 0) heading += 360;
-      robot.style.setProperty('--robot-angle', (Math.atan2(dy, dx) - Math.PI / 2) + 'rad');
+      robot.style.setProperty('--robot-angle', Math.atan2(dy, dx) + 'rad');
 
-      // Update status with velocity and heading
       var velocity = (dist / (segmentDuration / 1000)).toFixed(1);
-      var progressPercent = Math.round((currentSegment / totalSegments) * 100);
+      var progressPercent = Math.round(((currentSegment + progress) / totalSegments) * 100);
       updateAllStatusMessages('robot: progress ' + progressPercent + '% | vel: ' + velocity + ' m/s | hdg: ' + heading + '°');
 
       if (progress < 1) {
@@ -858,13 +1105,102 @@ function launchRRT() {
     requestAnimationFrame(animateRobot);
   }
 
-  var totalDuration = totalNodes * (prefersReducedMotion ? 50 : 90) + 4500;
-  setTimeout(function() {
-    clearInterval(rrtInterval);
-    radarOverlay.innerHTML = '';
-    updateAllStatusMessages(prev);
-    mlAnimating = false;
-  }, prefersReducedMotion ? totalDuration * 0.6 : totalDuration);
+  function finalizeWithNode(pathNode, label) {
+    var waypoints = tracePathWaypoints(pathNode);
+    var last = waypoints[waypoints.length - 1];
+    if (!last || last.x !== goal.x || last.y !== goal.y) {
+      waypoints.push({ x: goal.x, y: goal.y });
+    }
+    drawPathSegments(waypoints);
+    var pathCost = Math.round(computePathCost(waypoints));
+    updateAllStatusMessages(label + ' | cost: ' + pathCost);
+    setTimeout(function() {
+      animateRobotFollower(waypoints, function() {
+        cleanupTimeoutId = setTimeout(cleanupRRT, prefersReducedMotion ? 500 : 850);
+      });
+    }, prefersReducedMotion ? 120 : 260);
+  }
+
+  function chooseBestTerminalNode() {
+    var sorted = nodes.slice().sort(function(a, b) {
+      return Math.hypot(a.x - goal.x, a.y - goal.y) - Math.hypot(b.x - goal.x, b.y - goal.y);
+    });
+
+    for (var i = 0; i < sorted.length; i++) {
+      if (!isSegmentColliding(sorted[i], goal)) return sorted[i];
+    }
+    return sorted[0] || start;
+  }
+
+  var rrtInterval = setInterval(function() {
+    if (nodeIdx >= totalNodes || goalReached) {
+      clearInterval(rrtInterval);
+      if (!goalReached) {
+        var bestNode = chooseBestTerminalNode();
+        finalizeWithNode(bestNode, 'path refined');
+      }
+      return;
+    }
+
+    var sample;
+    if (Math.random() < goalBias) {
+      sample = { x: goal.x, y: goal.y };
+    } else {
+      sample = {
+        x: randomRange(mapLeft + pointPadding, mapRight - pointPadding),
+        y: randomRange(mapTop + pointPadding, mapBottom - pointPadding)
+      };
+    }
+
+    var nearest = nodes[0];
+    var minDist = Infinity;
+    for (var ni = 0; ni < nodes.length; ni++) {
+      var d = Math.hypot(nodes[ni].x - sample.x, nodes[ni].y - sample.y);
+      if (d < minDist) {
+        minDist = d;
+        nearest = nodes[ni];
+      }
+    }
+
+    if (!nearest || minDist === 0) {
+      nodeIdx++;
+      return;
+    }
+
+    var dx = sample.x - nearest.x;
+    var dy = sample.y - nearest.y;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    var newX = nearest.x + (dx / dist) * Math.min(stepSize, dist);
+    var newY = nearest.y + (dy / dist) * Math.min(stepSize, dist);
+
+    var insideBounds = newX > mapLeft + pointPadding &&
+      newX < mapRight - pointPadding &&
+      newY > mapTop + pointPadding &&
+      newY < mapBottom - pointPadding;
+
+    if (insideBounds && !isCollidingPoint(newX, newY) && !isSegmentColliding(nearest, { x: newX, y: newY })) {
+      var newNode = { x: newX, y: newY, parent: nearest };
+      nodes.push(newNode);
+
+      drawSegment('rrt-branch', nearest, newNode);
+      var nodeDot = document.createElement('div');
+      nodeDot.className = 'rrt-node';
+      nodeDot.style.left = newX + 'px';
+      nodeDot.style.top = newY + 'px';
+      radarOverlay.appendChild(nodeDot);
+
+      updateAllStatusMessages('RRT: expanding... | nodes: ' + nodes.length);
+
+      var distToGoal = Math.hypot(newX - goal.x, newY - goal.y);
+      if (distToGoal < goalThreshold && !isSegmentColliding(newNode, goal)) {
+        goalReached = true;
+        clearInterval(rrtInterval);
+        finalizeWithNode(newNode, 'path found');
+      }
+    }
+
+    nodeIdx++;
+  }, tickMs);
 }
 
 if (rrtBtn) rrtBtn.addEventListener('click', launchRRT);
@@ -1279,7 +1615,9 @@ document.addEventListener('keydown', function(e) {
   }
   // Escape: close overlays in priority order
   if (e.key === 'Escape') {
-    if (palette.classList.contains('active')) {
+    if (isPhotoFocusOpen()) {
+      closeProfileFocus();
+    } else if (palette.classList.contains('active')) {
       closePalette();
     } else if (lightbox.classList.contains('open')) {
       closeLightbox();

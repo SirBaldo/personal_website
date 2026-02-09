@@ -8,7 +8,7 @@
   <meta name="theme-color" content="#f8efea">
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="theme-light palette-cream">
+<body class="theme-light palette-cream status-accent-a">
 
   <!-- Top Bar -->
   <div class="top-bar reveal-target">
@@ -36,7 +36,6 @@
 
   <!-- Main Content -->
   <div class="container">
-    <div class="photo-backdrop" id="photoBackdrop"></div>
     <div class="profile-photo-container reveal-target">
       <div class="profile-photo-wrapper" id="profilePhoto">
         <img src="larry.jpg" alt="Federico Baldan" class="profile-photo">
@@ -45,7 +44,7 @@
     </div>
 
     <h1 class="reveal-target">
-      <span class="name-bracket">[</span> <span class="prompt" id="nameLead">&lt;/&gt;</span> <span class="name-clickable name-style-0" id="nameClick">Federico Baldan</span> <span class="name-bracket">]</span>
+      <span class="prompt" id="nameLead">&lt;/&gt;</span> <span class="name-clickable name-style-0" id="nameClick">Federico Baldan</span>
     </h1>
 
     <div class="role reveal-target">
@@ -109,12 +108,6 @@
         </svg>
         <span class="social-label">Portfolio</span>
       </a>
-      <a href="mailto:fbaldan@uw.edu" class="social-link magnetic-item" aria-label="Send email">
-        <svg class="social-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M2 5h20a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm10 7.1L3.6 7h16.8L12 12.1zm0 2.2L3 8.8V17h18V8.8l-9 5.5z"/>
-        </svg>
-        <span class="social-label">Email</span>
-      </a>
       <a href="Baldan_Resume_update.pdf" target="_blank" rel="noopener noreferrer" class="social-link magnetic-item" download aria-label="Download CV">
         <svg class="social-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 1.5V8h4.5L14 3.5zM8 11h8v1.5H8V11zm0 4h8v1.5H8V15zm0 4h5v1.5H8V19z"/>
@@ -147,7 +140,7 @@
   </div>
 
   <!-- Status Bar -->
-  <div class="status-bar reveal-target">
+  <div class="status-bar status-layout-2x1x2 reveal-target">
     <span id="statusMessage" role="status" aria-live="polite">powered by mass caffeine</span>
     <button class="ignition-btn magnetic-item" id="ignitionBtn" title="Launch rocket!">
       <svg class="rocket-icon" viewBox="0 0 12 16" fill="none">
@@ -227,6 +220,15 @@
 
   <!-- Copy Toast -->
   <div class="copy-toast" id="copyToast" role="status" aria-live="polite">copied!</div>
+
+  <!-- Profile Focus Layer -->
+  <div class="photo-focus-layer" id="photoFocusLayer" role="dialog" aria-modal="true" aria-label="Profile photo focus view" aria-hidden="true">
+    <button class="photo-focus-close" id="photoFocusClose" aria-label="Close profile focus">&times;</button>
+    <div class="photo-focus-content">
+      <img src="" alt="" class="photo-focus-image" id="photoFocusImage">
+      <div class="photo-focus-caption" id="photoFocusCaption">Whatcha looking at?</div>
+    </div>
+  </div>
 
   <script src="script.js" defer></script>
 </body>
