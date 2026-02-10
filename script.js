@@ -127,11 +127,11 @@ var photoFocusAnimImage = null;
 var photoFocusTimeline = null;
 var photoFocusFallbackTimerId = null;
 var photoFocusState = 'closed';
-var PHOTO_HOVER_OPEN_DELAY_MS = 1000;
+var PHOTO_HOVER_OPEN_DELAY_MS = 400;
 var PHOTO_MOUSELEAVE_CLOSE_DELAY_MS = 0;
-var PHOTO_FOCUS_OPEN_MS = 360;
-var PHOTO_FOCUS_CLOSE_MS = 260;
-var PHOTO_FOCUS_OPEN_EASE = 'power3.out';
+var PHOTO_FOCUS_OPEN_MS = 480;
+var PHOTO_FOCUS_CLOSE_MS = 380;
+var PHOTO_FOCUS_OPEN_EASE = 'power2.out';
 var PHOTO_FOCUS_CLOSE_EASE = 'power2.inOut';
 var coarsePointerQuery = window.matchMedia('(hover: none), (pointer: coarse)');
 var isCoarsePointer = coarsePointerQuery.matches;
@@ -1379,7 +1379,7 @@ function launchRRT() {
 
     var currentSegment = 0;
     var startTime = null;
-    var segmentDuration = prefersReducedMotion ? 100 : 140;
+    var segmentDuration = prefersReducedMotion ? 80 : 60;
     var totalSegments = waypoints.length - 1;
 
     function animateRobot(timestamp) {
@@ -1589,6 +1589,14 @@ clickableItems.forEach(function(item) {
 
 panelClose.addEventListener('click', closePanel);
 
+document.addEventListener('click', function(e) {
+  if (!sidePanel.classList.contains('open')) return;
+  if (sidePanel.contains(e.target)) return;
+  if (e.target.closest('.clickable-item')) return;
+  if (e.target.closest('.lightbox')) return;
+  closePanel();
+});
+
 function closePanel() {
   sidePanel.classList.remove('open');
   document.body.classList.remove('panel-open');
@@ -1650,16 +1658,28 @@ function updateLightboxImage() {
   }
 }
 
+function transitionLightboxImage(newIndex) {
+  if (currentGallery.length === 0) return;
+  lightboxImg.style.opacity = '0';
+  lightboxImg.style.transform = 'scale(0.95)';
+  setTimeout(function() {
+    currentGalleryIndex = newIndex;
+    updateLightboxImage();
+    requestAnimationFrame(function() {
+      lightboxImg.style.opacity = '';
+      lightboxImg.style.transform = '';
+    });
+  }, 180);
+}
+
 function showNextImage() {
   if (currentGallery.length === 0) return;
-  currentGalleryIndex = (currentGalleryIndex + 1) % currentGallery.length;
-  updateLightboxImage();
+  transitionLightboxImage((currentGalleryIndex + 1) % currentGallery.length);
 }
 
 function showPrevImage() {
   if (currentGallery.length === 0) return;
-  currentGalleryIndex = (currentGalleryIndex - 1 + currentGallery.length) % currentGallery.length;
-  updateLightboxImage();
+  transitionLightboxImage((currentGalleryIndex - 1 + currentGallery.length) % currentGallery.length);
 }
 
 document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
