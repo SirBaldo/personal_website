@@ -16,10 +16,10 @@
     <button class="top-bar-btn magnetic-item" id="toggleBg" title="Palette: cream" aria-label="Cycle color palette">&#9632; bg</button>
     <div class="dropdown-wrapper">
       <button class="top-bar-btn magnetic-item" id="toggleLang" title="Change language">
-        <span id="langFlag">&#127468;&#127463;</span> <span id="langLabel">EN</span>
+        <span id="langFlag">&#127482;&#127480;</span> <span id="langLabel">EN</span>
       </button>
       <div class="dropdown-menu" id="langDropdown">
-        <button class="dropdown-option active" data-lang="EN"><span class="dropdown-icon">&#127468;&#127463;</span> English</button>
+        <button class="dropdown-option active" data-lang="EN"><span class="dropdown-icon">&#127482;&#127480;</span> English</button>
         <button class="dropdown-option" data-lang="IT"><span class="dropdown-icon">&#127470;&#127481;</span> Italiano</button>
         <button class="dropdown-option" data-lang="ES"><span class="dropdown-icon">&#127466;&#127480;</span> Espa&ntilde;ol</button>
         <button class="dropdown-option" data-lang="ZH"><span class="dropdown-icon">&#127464;&#127475;</span> &#20013;&#25991;</button>
@@ -52,9 +52,7 @@
       <span id="role2">grew up as a vibe computer scientist</span>
     </div>
 
-    <div class="bio clickable-item reveal-target" data-panel="bio" id="bioText">
-      click here to learn more about me...
-    </div>
+    <div class="bio clickable-item reveal-target" data-panel="bio" id="bioText">peek behind the scenes</div>
 
     <details class="reveal-target">
       <summary id="summaryAbout">about</summary>
@@ -68,24 +66,39 @@
     </details>
 
     <details class="reveal-target">
-      <summary id="summaryProjects">projects</summary>
+      <summary id="summaryProjects">some things I've worked on</summary>
       <div class="section-content">
-        <ul>
-          <li><span class="clickable-item" data-panel="project1">Progetto Alpha</span> - Sistema di controllo autonomo</li>
-          <li><span class="clickable-item" data-panel="project2">Progetto Beta</span> - Machine learning pipeline</li>
-          <li><span class="clickable-item" data-panel="project3">Progetto Gamma</span> - Web app dashboard</li>
+        <ul class="project-list">
+          <li>
+            <a class="project-primary-link" href="https://github.com/SirBaldo" target="_blank" rel="noopener noreferrer">Autonomous Guidance Stack</a>
+            <span class="project-extra-links">
+              <a href="https://github.com/SirBaldo" target="_blank" rel="noopener noreferrer">repo</a>
+              <span class="project-extra-sep">|</span>
+              <a href="https://sirbaldo.github.io/" target="_blank" rel="noopener noreferrer">paper</a>
+            </span>
+          </li>
+          <li>
+            <a class="project-primary-link" href="https://github.com/SirBaldo" target="_blank" rel="noopener noreferrer">Flight Ops Dashboard</a>
+            <span class="project-extra-links">
+              <a href="https://github.com/SirBaldo" target="_blank" rel="noopener noreferrer">repo</a>
+            </span>
+          </li>
+          <li>
+            <a class="project-primary-link" href="https://sirbaldo.github.io/" target="_blank" rel="noopener noreferrer">Orbital ML Study</a>
+            <span class="project-extra-links">
+              <a href="https://sirbaldo.github.io/" target="_blank" rel="noopener noreferrer">paper</a>
+            </span>
+          </li>
         </ul>
       </div>
     </details>
 
     <details class="reveal-target">
-      <summary id="summaryCv">cv</summary>
+      <summary id="summaryBut">but</summary>
       <div class="section-content">
-        <ul>
-          <li><a href="Baldan_Resume_update.pdf" target="_blank" rel="noopener noreferrer" download>Download CV (PDF)</a></li>
-          <li>Skills: Python, MATLAB, CAD, JavaScript, ...</li>
-          <li>Education: La tua formazione...</li>
-        </ul>
+        <a href="https://youtu.be/e3-5YC_oHjE?si=Xoo6BnHUm2EUTWjz" target="_blank" rel="noopener noreferrer" class="song-link">
+          <span class="song-infinity">&infin;</span> I Still Haven't Found What I'm Looking For
+        </a>
       </div>
     </details>
 
@@ -116,12 +129,6 @@
       </a>
     </div>
 
-    <div class="song-quote reveal-target">
-      <a href="https://youtu.be/e3-5YC_oHjE?si=Xoo6BnHUm2EUTWjz"
-         target="_blank" rel="noopener noreferrer" class="song-link">
-        <span class="song-infinity">&infin;</span> I Still Haven't Found What I'm Looking For
-      </a>
-    </div>
   </div>
 
   <!-- Rocket (SVG) -->
@@ -230,6 +237,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <script src="script.js" defer></script>
 </body>
 </html>
