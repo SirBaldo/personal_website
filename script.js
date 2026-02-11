@@ -234,38 +234,38 @@ function getSiteContent(raw) {
 var siteContent = getSiteContent(window.SITE_CONTENT);
 
 // ══════════════════════════════════════════
-// PROFILE PHOTO EXPAND
+// PROFILE PHOTO EXPAND (outline trick)
 // ══════════════════════════════════════════
 
 var profilePhotoWrapper = document.getElementById('profilePhoto');
-var profilePhotoElement = profilePhotoWrapper ? profilePhotoWrapper.querySelector('.profile-photo') : null;
-var photoFocusLayer = document.getElementById('photoFocusLayer');
-var photoFocusContent = photoFocusLayer ? photoFocusLayer.querySelector('.photo-focus-content') : null;
-var photoFocusImage = document.getElementById('photoFocusImage');
-var photoFocusCaption = document.getElementById('photoFocusCaption');
-var photoFocusCloseBtn = document.getElementById('photoFocusClose');
-var photoHoverTimerId = null;
-var photoFocusMouseLeaveTimerId = null;
-var photoFocusAnimImage = null;
-var photoFocusTimeline = null;
-var photoFocusFallbackTimerId = null;
-var photoFocusState = 'closed';
-var PHOTO_HOVER_OPEN_DELAY_MS = 160;
-var PHOTO_MOUSELEAVE_CLOSE_DELAY_MS = 40;
-var PHOTO_FOCUS_OPEN_MS = 300;
-var PHOTO_FOCUS_CLOSE_MS = 240;
-var PHOTO_FOCUS_OPEN_EASE = 'power3.out';
-var PHOTO_FOCUS_CLOSE_EASE = 'power2.inOut';
-var coarsePointerQuery = window.matchMedia('(hover: none), (pointer: coarse)');
-var isCoarsePointer = coarsePointerQuery.matches;
+var profilePhotoImg = profilePhotoWrapper ? profilePhotoWrapper.querySelector('.profile-photo') : null;
+var photoExpanded = false;
 
-if (coarsePointerQuery.addEventListener) {
-  coarsePointerQuery.addEventListener('change', function(e) {
-    isCoarsePointer = e.matches;
+function collapsePhoto() {
+  if (!profilePhotoImg) return;
+  profilePhotoImg.classList.remove('photo-expanded', 'photo-clicked');
+  profilePhotoWrapper.classList.remove('photo-tooltip-visible');
+  photoExpanded = false;
+}
+
+if (profilePhotoWrapper) {
+  profilePhotoWrapper.addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (!photoExpanded) {
+      profilePhotoImg.classList.add('photo-expanded', 'photo-clicked');
+      profilePhotoWrapper.classList.add('photo-tooltip-visible');
+      photoExpanded = true;
+    }
   });
-} else if (coarsePointerQuery.addListener) {
-  coarsePointerQuery.addListener(function(e) {
-    isCoarsePointer = e.matches;
+
+  profilePhotoWrapper.addEventListener('mouseleave', function() {
+    if (photoExpanded) collapsePhoto();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!photoExpanded) return;
+    if (profilePhotoWrapper.contains(e.target)) return;
+    collapsePhoto();
   });
 }
 
@@ -327,7 +327,7 @@ function renderProjects() {
 }
 
 function resolveProfileImage() {
-  if (!profilePhotoElement) return;
+  if (!profilePhotoImg) return;
   var profile = siteContent.profile || DEFAULT_SITE_CONTENT.profile;
   var baseName = isNonEmptyString(profile.baseName) ? profile.baseName.trim() : DEFAULT_SITE_CONTENT.profile.baseName;
   var extensions = normalizeExtensions(profile.extensions);
@@ -350,15 +350,14 @@ function resolveProfileImage() {
     addCandidate(baseName + '.' + ext);
   });
 
-  addCandidate(profilePhotoElement.getAttribute('src'));
+  addCandidate(profilePhotoImg.getAttribute('src'));
 
   function tryCandidate(index) {
     if (index >= candidates.length) return;
     var candidate = candidates[index];
     var probe = new Image();
     probe.onload = function() {
-      profilePhotoElement.src = candidate;
-      if (photoFocusImage) photoFocusImage.src = candidate;
+      profilePhotoImg.src = candidate;
     };
     probe.onerror = function() {
       tryCandidate(index + 1);
@@ -372,314 +371,6 @@ function resolveProfileImage() {
 renderProjects();
 resolveProfileImage();
 applyCvLinks();
-
-function isPhotoFocusOpen() {
-  return photoFocusState !== 'closed';
-}
-
-function clearPhotoFocusStateClasses() {
-  document.body.classList.remove('photo-focus-opening', 'photo-focus-active', 'photo-focus-closing');
-}
-
-function setPhotoFocusState(nextState) {
-  photoFocusState = nextState;
-  clearPhotoFocusStateClasses();
-  if (nextState === 'opening') document.body.classList.add('photo-focus-opening');
-  if (nextState === 'open') document.body.classList.add('photo-focus-active');
-  if (nextState === 'closing') document.body.classList.add('photo-focus-closing');
-}
-
-function cancelProfileHoverOpen() {
-  if (photoHoverTimerId) {
-    clearTimeout(photoHoverTimerId);
-    photoHoverTimerId = null;
-  }
-}
-
-function cancelPhotoFocusMouseLeaveClose() {
-  if (photoFocusMouseLeaveTimerId) {
-    clearTimeout(photoFocusMouseLeaveTimerId);
-    photoFocusMouseLeaveTimerId = null;
-  }
-}
-
-function schedulePhotoFocusMouseLeaveClose() {
-  if (isCoarsePointer || !isPhotoFocusOpen()) return;
-  cancelPhotoFocusMouseLeaveClose();
-  photoFocusMouseLeaveTimerId = setTimeout(function() {
-    closeProfileFocus();
-  }, PHOTO_MOUSELEAVE_CLOSE_DELAY_MS);
-}
-
-function trackPhotoFocusPointer(e) {
-  if (isCoarsePointer || !photoFocusLayer || !isPhotoFocusOpen()) return;
-  if (e.target === photoFocusLayer) {
-    schedulePhotoFocusMouseLeaveClose();
-  } else {
-    cancelPhotoFocusMouseLeaveClose();
-  }
-}
-
-function syncProfileFocusContent() {
-  if (!profilePhotoElement || !photoFocusImage) return;
-  photoFocusImage.src = profilePhotoElement.currentSrc || profilePhotoElement.src;
-  photoFocusImage.alt = profilePhotoElement.alt || 'Profile photo';
-  if (photoFocusCaption) {
-    photoFocusCaption.textContent = 'Whatcha looking at?';
-  }
-}
-
-function getElementRect(el) {
-  if (!el) return null;
-  var rect = el.getBoundingClientRect();
-  if (rect.width <= 0 || rect.height <= 0) return null;
-  return rect;
-}
-
-function setPhotoFocusImageVisibility(hidden) {
-  if (!photoFocusImage) return;
-  if (hidden) {
-    photoFocusImage.style.opacity = '0';
-    photoFocusImage.style.visibility = 'hidden';
-  } else {
-    photoFocusImage.style.opacity = '';
-    photoFocusImage.style.visibility = '';
-  }
-}
-
-function stopPhotoFocusAnimation() {
-  if (photoFocusTimeline && typeof photoFocusTimeline.kill === 'function') {
-    photoFocusTimeline.kill();
-  }
-  photoFocusTimeline = null;
-  if (photoFocusFallbackTimerId) {
-    clearTimeout(photoFocusFallbackTimerId);
-    photoFocusFallbackTimerId = null;
-  }
-}
-
-function removePhotoFocusAnimImage() {
-  stopPhotoFocusAnimation();
-  if (photoFocusAnimImage && photoFocusAnimImage.parentNode) {
-    photoFocusAnimImage.parentNode.removeChild(photoFocusAnimImage);
-  }
-  photoFocusAnimImage = null;
-}
-
-function createPhotoFocusAnimImage(rect) {
-  if (!rect || !profilePhotoElement) return null;
-  removePhotoFocusAnimImage();
-  var clone = document.createElement('img');
-  clone.className = 'photo-focus-anim-image';
-  clone.src = profilePhotoElement.currentSrc || profilePhotoElement.src;
-  clone.alt = profilePhotoElement.alt || 'Profile photo';
-  clone.style.left = rect.left + 'px';
-  clone.style.top = rect.top + 'px';
-  clone.style.width = rect.width + 'px';
-  clone.style.height = rect.height + 'px';
-  document.body.appendChild(clone);
-  photoFocusAnimImage = clone;
-  return clone;
-}
-
-function animatePhotoFocusClone(clone, fromRect, toRect, duration, ease, done) {
-  if (!clone || !fromRect || !toRect || prefersReducedMotion) {
-    if (done) done();
-    return;
-  }
-
-  stopPhotoFocusAnimation();
-
-  if (window.gsap && typeof window.gsap.timeline === 'function') {
-    window.gsap.set(clone, {
-      left: fromRect.left,
-      top: fromRect.top,
-      width: fromRect.width,
-      height: fromRect.height
-    });
-    photoFocusTimeline = window.gsap.timeline({
-      onComplete: function() {
-        photoFocusTimeline = null;
-        if (done) done();
-      }
-    });
-    photoFocusTimeline.to(clone, {
-      left: toRect.left,
-      top: toRect.top,
-      width: toRect.width,
-      height: toRect.height,
-      duration: duration / 1000,
-      ease: ease || PHOTO_FOCUS_OPEN_EASE,
-      overwrite: 'auto'
-    });
-    return;
-  }
-
-  if (typeof clone.animate === 'function') {
-    photoFocusTimeline = clone.animate([
-      { left: fromRect.left + 'px', top: fromRect.top + 'px', width: fromRect.width + 'px', height: fromRect.height + 'px' },
-      { left: toRect.left + 'px', top: toRect.top + 'px', width: toRect.width + 'px', height: toRect.height + 'px' }
-    ], {
-      duration: duration,
-      easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
-      fill: 'forwards'
-    });
-    photoFocusTimeline.onfinish = function() {
-      photoFocusTimeline = null;
-      if (done) done();
-    };
-    photoFocusTimeline.oncancel = function() {
-      photoFocusTimeline = null;
-    };
-    return;
-  }
-
-  clone.style.transition = 'left ' + duration + 'ms cubic-bezier(0.22, 1, 0.36, 1), top ' + duration + 'ms cubic-bezier(0.22, 1, 0.36, 1), width ' + duration + 'ms cubic-bezier(0.22, 1, 0.36, 1), height ' + duration + 'ms cubic-bezier(0.22, 1, 0.36, 1)';
-  requestAnimationFrame(function() {
-    clone.style.left = toRect.left + 'px';
-    clone.style.top = toRect.top + 'px';
-    clone.style.width = toRect.width + 'px';
-    clone.style.height = toRect.height + 'px';
-  });
-  photoFocusFallbackTimerId = setTimeout(function() {
-    photoFocusFallbackTimerId = null;
-    if (done) done();
-  }, duration);
-}
-
-function finalizePhotoFocusOpen() {
-  removePhotoFocusAnimImage();
-  setPhotoFocusImageVisibility(false);
-  setPhotoFocusState('open');
-}
-
-function finalizePhotoFocusClose() {
-  removePhotoFocusAnimImage();
-  if (photoFocusLayer) {
-    photoFocusLayer.classList.remove('open');
-    photoFocusLayer.setAttribute('aria-hidden', 'true');
-  }
-  setPhotoFocusImageVisibility(true);
-  setPhotoFocusState('closed');
-}
-
-function openProfileFocus() {
-  if (!photoFocusLayer) return;
-  if (photoFocusState === 'open' || photoFocusState === 'opening') return;
-
-  cancelProfileHoverOpen();
-  cancelPhotoFocusMouseLeaveClose();
-  syncProfileFocusContent();
-
-  var startRect = getElementRect(profilePhotoElement);
-  if (photoFocusState === 'closing' && photoFocusAnimImage) {
-    var liveRect = getElementRect(photoFocusAnimImage);
-    if (liveRect) startRect = liveRect;
-  }
-
-  stopPhotoFocusAnimation();
-
-  setPhotoFocusState('opening');
-  photoFocusLayer.setAttribute('aria-hidden', 'false');
-  photoFocusLayer.classList.add('open');
-  setPhotoFocusImageVisibility(true);
-
-  if (prefersReducedMotion || !profilePhotoElement || !photoFocusImage) {
-    finalizePhotoFocusOpen();
-    return;
-  }
-
-  if (!startRect) {
-    finalizePhotoFocusOpen();
-    return;
-  }
-
-  requestAnimationFrame(function() {
-    if (photoFocusState !== 'opening') return;
-    var targetRect = getElementRect(photoFocusImage);
-    if (!targetRect) {
-      finalizePhotoFocusOpen();
-      return;
-    }
-    var clone = createPhotoFocusAnimImage(startRect);
-    animatePhotoFocusClone(clone, startRect, targetRect, PHOTO_FOCUS_OPEN_MS, PHOTO_FOCUS_OPEN_EASE, finalizePhotoFocusOpen);
-  });
-}
-
-function closeProfileFocus() {
-  cancelProfileHoverOpen();
-  cancelPhotoFocusMouseLeaveClose();
-  if (!photoFocusLayer) return;
-  if (!isPhotoFocusOpen() || photoFocusState === 'closing') return;
-
-  var startRect = photoFocusAnimImage ? getElementRect(photoFocusAnimImage) : getElementRect(photoFocusImage);
-  var endRect = getElementRect(profilePhotoElement);
-
-  stopPhotoFocusAnimation();
-  setPhotoFocusState('closing');
-
-  if (prefersReducedMotion || !profilePhotoElement || !photoFocusImage || !startRect || !endRect) {
-    finalizePhotoFocusClose();
-    return;
-  }
-
-  setPhotoFocusImageVisibility(true);
-  var clone = createPhotoFocusAnimImage(startRect);
-  animatePhotoFocusClone(clone, startRect, endRect, PHOTO_FOCUS_CLOSE_MS, PHOTO_FOCUS_CLOSE_EASE, finalizePhotoFocusClose);
-}
-
-function scheduleProfileHoverOpen() {
-  if (isCoarsePointer || photoFocusState !== 'closed') return;
-  cancelProfileHoverOpen();
-  photoHoverTimerId = setTimeout(function() {
-    openProfileFocus();
-    photoHoverTimerId = null;
-  }, PHOTO_HOVER_OPEN_DELAY_MS);
-}
-
-function toggleProfileFocus() {
-  if (isPhotoFocusOpen()) {
-    closeProfileFocus();
-  } else {
-    openProfileFocus();
-  }
-}
-
-if (profilePhotoWrapper) {
-  profilePhotoWrapper.addEventListener('click', function(e) {
-    e.stopPropagation();
-    toggleProfileFocus();
-  });
-
-  if (!isCoarsePointer) {
-    profilePhotoWrapper.addEventListener('mouseenter', scheduleProfileHoverOpen);
-    profilePhotoWrapper.addEventListener('mouseleave', cancelProfileHoverOpen);
-  }
-}
-
-if (photoFocusCloseBtn) {
-  photoFocusCloseBtn.addEventListener('click', closeProfileFocus);
-}
-
-if (photoFocusLayer) {
-  photoFocusLayer.addEventListener('click', function(e) {
-    if (e.target === photoFocusLayer) {
-      closeProfileFocus();
-    }
-  });
-  photoFocusLayer.addEventListener('mousemove', trackPhotoFocusPointer);
-  photoFocusLayer.addEventListener('mouseleave', schedulePhotoFocusMouseLeaveClose);
-}
-
-if (photoFocusContent) {
-  photoFocusContent.addEventListener('mouseenter', cancelPhotoFocusMouseLeaveClose);
-  photoFocusContent.addEventListener('mouseleave', schedulePhotoFocusMouseLeaveClose);
-}
-
-document.addEventListener('mouseleave', function() {
-  if (isCoarsePointer || !isPhotoFocusOpen()) return;
-  schedulePhotoFocusMouseLeaveClose();
-});
 
 // ══════════════════════════════════════════
 // NAME STYLE CYCLING (curated set)
@@ -2264,8 +1955,8 @@ document.addEventListener('keydown', function(e) {
   }
   // Escape: close overlays in priority order
   if (e.key === 'Escape') {
-    if (isPhotoFocusOpen()) {
-      closeProfileFocus();
+    if (photoExpanded) {
+      collapsePhoto();
     } else if (palette.classList.contains('active')) {
       closePalette();
     } else if (lightbox.classList.contains('open')) {
