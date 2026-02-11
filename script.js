@@ -250,11 +250,11 @@ var photoFocusAnimImage = null;
 var photoFocusTimeline = null;
 var photoFocusFallbackTimerId = null;
 var photoFocusState = 'closed';
-var PHOTO_HOVER_OPEN_DELAY_MS = 400;
-var PHOTO_MOUSELEAVE_CLOSE_DELAY_MS = 0;
-var PHOTO_FOCUS_OPEN_MS = 480;
-var PHOTO_FOCUS_CLOSE_MS = 380;
-var PHOTO_FOCUS_OPEN_EASE = 'power2.out';
+var PHOTO_HOVER_OPEN_DELAY_MS = 160;
+var PHOTO_MOUSELEAVE_CLOSE_DELAY_MS = 40;
+var PHOTO_FOCUS_OPEN_MS = 300;
+var PHOTO_FOCUS_CLOSE_MS = 240;
+var PHOTO_FOCUS_OPEN_EASE = 'power3.out';
 var PHOTO_FOCUS_CLOSE_EASE = 'power2.inOut';
 var coarsePointerQuery = window.matchMedia('(hover: none), (pointer: coarse)');
 var isCoarsePointer = coarsePointerQuery.matches;
@@ -411,6 +411,15 @@ function schedulePhotoFocusMouseLeaveClose() {
   }, PHOTO_MOUSELEAVE_CLOSE_DELAY_MS);
 }
 
+function trackPhotoFocusPointer(e) {
+  if (isCoarsePointer || !photoFocusLayer || !isPhotoFocusOpen()) return;
+  if (e.target === photoFocusLayer) {
+    schedulePhotoFocusMouseLeaveClose();
+  } else {
+    cancelPhotoFocusMouseLeaveClose();
+  }
+}
+
 function syncProfileFocusContent() {
   if (!profilePhotoElement || !photoFocusImage) return;
   photoFocusImage.src = profilePhotoElement.currentSrc || profilePhotoElement.src;
@@ -512,7 +521,7 @@ function animatePhotoFocusClone(clone, fromRect, toRect, duration, ease, done) {
       { left: toRect.left + 'px', top: toRect.top + 'px', width: toRect.width + 'px', height: toRect.height + 'px' }
     ], {
       duration: duration,
-      easing: 'cubic-bezier(0.22, 0.78, 0.16, 1)',
+      easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
       fill: 'forwards'
     });
     photoFocusTimeline.onfinish = function() {
@@ -525,7 +534,7 @@ function animatePhotoFocusClone(clone, fromRect, toRect, duration, ease, done) {
     return;
   }
 
-  clone.style.transition = 'left ' + duration + 'ms cubic-bezier(0.22, 0.78, 0.16, 1), top ' + duration + 'ms cubic-bezier(0.22, 0.78, 0.16, 1), width ' + duration + 'ms cubic-bezier(0.22, 0.78, 0.16, 1), height ' + duration + 'ms cubic-bezier(0.22, 0.78, 0.16, 1)';
+  clone.style.transition = 'left ' + duration + 'ms cubic-bezier(0.22, 1, 0.36, 1), top ' + duration + 'ms cubic-bezier(0.22, 1, 0.36, 1), width ' + duration + 'ms cubic-bezier(0.22, 1, 0.36, 1), height ' + duration + 'ms cubic-bezier(0.22, 1, 0.36, 1)';
   requestAnimationFrame(function() {
     clone.style.left = toRect.left + 'px';
     clone.style.top = toRect.top + 'px';
@@ -658,12 +667,19 @@ if (photoFocusLayer) {
       closeProfileFocus();
     }
   });
+  photoFocusLayer.addEventListener('mousemove', trackPhotoFocusPointer);
+  photoFocusLayer.addEventListener('mouseleave', schedulePhotoFocusMouseLeaveClose);
 }
 
 if (photoFocusContent) {
   photoFocusContent.addEventListener('mouseenter', cancelPhotoFocusMouseLeaveClose);
   photoFocusContent.addEventListener('mouseleave', schedulePhotoFocusMouseLeaveClose);
 }
+
+document.addEventListener('mouseleave', function() {
+  if (isCoarsePointer || !isPhotoFocusOpen()) return;
+  schedulePhotoFocusMouseLeaveClose();
+});
 
 // ══════════════════════════════════════════
 // NAME STYLE CYCLING (curated set)
@@ -843,8 +859,8 @@ var radarAnimating = false;
 var mlAnimating = false;
 var rocketLaunching = false;
 var ROCKET_LAUNCH_MS = 2900;
-var ROCKET_PRELAUNCH_MS = 700;
-var ROCKET_PARTICLE_COUNT = 28;
+var ROCKET_PRELAUNCH_MS = 500;
+var ROCKET_PARTICLE_COUNT = 34;
 
 function updateAllStatusMessages(text) {
   if (statusMessage) statusMessage.textContent = text;
@@ -899,22 +915,26 @@ function createParticles(x, y) {
       setTimeout(function() {
         var p = document.createElement('div');
         p.className = 'particle';
-        var ox = (Math.random() - 0.5) * (inGroundPhase ? 46 : 28);
+        var ox = (Math.random() - 0.5) * (inGroundPhase ? 42 : 26);
         var oy = inGroundPhase ? Math.random() * 10 : Math.random() * 18;
-        var dx = (Math.random() - 0.5) * (inGroundPhase ? 84 : 34);
-        var dy = (inGroundPhase ? 56 : 96) + Math.random() * (inGroundPhase ? 36 : 52);
+        var dx = (Math.random() - 0.5) * (inGroundPhase ? 72 : 30);
+        var dy = (inGroundPhase ? 42 : 78) + Math.random() * (inGroundPhase ? 30 : 40);
+        var lifeMs = Math.round(1050 + Math.random() * 520);
         p.style.left = (x + ox) + 'px';
-        p.style.top = (y + oy + idx * 2.8) + 'px';
+        p.style.top = (y + oy + idx * 2.1) + 'px';
         p.style.setProperty('--dx', dx.toFixed(2) + 'px');
         p.style.setProperty('--dy', dy.toFixed(2) + 'px');
+        p.style.setProperty('--dx-mid', (dx * 0.58).toFixed(2) + 'px');
+        p.style.setProperty('--dy-mid', (dy * 0.58).toFixed(2) + 'px');
+        p.style.setProperty('--particle-life', lifeMs + 'ms');
         var size = 2 + Math.random() * 4;
         p.style.width = size + 'px';
         p.style.height = size + 'px';
         var colors = ['#ff4500', '#ff6b35', '#ff8c00', '#ffcc00', '#ff2200'];
         p.style.background = colors[Math.floor(Math.random() * colors.length)];
         document.body.appendChild(p);
-        setTimeout(function() { p.classList.add('animate'); }, 10);
-        setTimeout(function() { p.remove(); }, 800);
+        setTimeout(function() { p.classList.add('animate'); }, 1);
+        setTimeout(function() { p.remove(); }, lifeMs + 90);
       }, emissionDelay);
     })(i);
   }

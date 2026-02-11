@@ -8,26 +8,35 @@ window.SITE_CONTENT = {
   },
   projects: [
     {
-      title: 'Autonomous Guidance Stack',
-      primaryUrl: 'https://github.com/SirBaldo',
+      title: 'Plan Point Act(Ai2)',
+      primaryUrl: 'content/projects/plan_poin_act.pdf',
       extras: [
-        { label: 'repo', url: 'https://github.com/SirBaldo' },
-        { label: 'paper', url: 'https://sirbaldo.github.io/' }
+        { label: 'repo', url: 'https://github.com/cl-victor1/o3-Molmo-Powered-Web-Agent' }
       ]
     },
     {
-      title: 'Flight Ops Dashboard',
-      primaryUrl: 'https://github.com/SirBaldo',
+      title: 'Medistillation',
+      primaryUrl: 'content/projects/knowledge_distillation.pdf',
       extras: [
-        { label: 'repo', url: 'https://github.com/SirBaldo' }
+        { label: 'repo', url: 'https://github.com/shreyanmitra/Medistillation' }
       ]
     },
     {
-      title: 'Orbital ML Study',
-      primaryUrl: 'https://sirbaldo.github.io/',
+      title: 'Interactive Learned LQR Control',
+      primaryUrl: 'content/projects/LQR_gain_exploration.pdf',
+      extras: []
+    },
+    {
+      title: 'MonoManiac',
+      primaryUrl: 'content/projects/MonoManiac.pdf',
       extras: [
-        { label: 'paper', url: 'https://sirbaldo.github.io/' }
+        { label: 'repo', url: 'https://github.com/Lars1505/monopoly' }
       ]
+    },
+    {
+      title: 'Origami Array Control',
+      primaryUrl: 'content/projects/origami.pdf',
+      extras: []
     }
   ]
 };

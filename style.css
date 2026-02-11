@@ -342,11 +342,11 @@ h1 {
 
 .profile-photo-wrapper {
   position: relative;
-  width: 130px;
-  height: 130px;
+  width: 124px;
+  height: 124px;
   cursor: pointer;
   z-index: 1;
-  transition: transform 0.2s ease;
+  transition: transform 0.24s ease;
 }
 
 .profile-photo {
@@ -697,6 +697,81 @@ summary:focus-visible {
 .song-infinity {
   font-size: 1.1em;
   font-style: normal;
+}
+
+.song-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.song-nest {
+  margin-left: 14px;
+  padding-left: 12px;
+  border-left: 1px dashed color-mix(in srgb, var(--text-muted) 46%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.song-subsection {
+  margin: 0;
+}
+
+#summaryBut {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.16em;
+}
+
+#summaryBut::before {
+  content: '\25B6';
+  font-size: 0.72em;
+}
+
+details[open] #summaryBut::before {
+  content: '\25BC';
+}
+
+#summaryBut + .section-content.song-thread {
+  padding-top: 8px;
+  padding-bottom: 10px;
+}
+
+.song-subsection > summary {
+  padding: 3px 0;
+  font-size: 0.9em;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--text-muted) 88%, var(--text-primary));
+  display: inline-flex;
+  align-items: center;
+  gap: 0.16em;
+}
+
+.song-subsection > summary::before {
+  content: '\25B8';
+  font-size: 0.68em;
+}
+
+.song-subsection[open] > summary::before {
+  content: '\25BE';
+}
+
+.song-subsection > .section-content {
+  padding: 4px 0 2px 14px;
+}
+
+.song-deeper {
+  margin-top: 2px;
+  margin-left: 10px;
+  padding-left: 10px;
+  border-left-style: dotted;
+}
+
+.song-deeper .song-subsection > summary {
+  font-size: 0.8em;
+  letter-spacing: 0.015em;
 }
 
 .radar-overlay {
@@ -1517,12 +1592,12 @@ body.panel-open .container {
 
 @keyframes rocketLaunchVertical {
   0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-  5% { transform: translateY(2px) rotate(-0.5deg); }
-  10% { transform: translateY(-1px) rotate(0.45deg); }
-  15% { transform: translateY(1px) rotate(-0.3deg); }
-  20% { transform: translateY(-1px) rotate(0.2deg); }
-  24% { transform: translateY(0) rotate(0deg); }
-  29% { transform: translateY(-10px) rotate(0.25deg); }
+  4% { transform: translateY(2px) rotate(-0.5deg); }
+  8% { transform: translateY(-1px) rotate(0.45deg); }
+  12% { transform: translateY(1px) rotate(-0.3deg); }
+  16% { transform: translateY(-1px) rotate(0.2deg); }
+  19% { transform: translateY(0) rotate(0deg); }
+  22% { transform: translateY(-10px) rotate(0.25deg); }
   100% { transform: translateY(-120vh) rotate(2deg); opacity: 0; }
 }
 
@@ -1537,15 +1612,18 @@ body.panel-open .container {
   pointer-events: none;
   z-index: 9998;
   will-change: transform, opacity;
+  opacity: 0;
 }
 
 .particle.animate {
-  animation: particleFall 0.8s ease-out forwards;
+  animation: particleFall var(--particle-life, 1280ms) cubic-bezier(0.2, 0.72, 0.2, 1) forwards;
 }
 
 @keyframes particleFall {
-  0% { opacity: 0.9; transform: translate3d(0, 0, 0) scale(1); }
-  100% { opacity: 0; transform: translate3d(var(--dx, 0px), var(--dy, 100px), 0) scale(0); }
+  0% { opacity: 0; transform: translate3d(0, 0, 0) scale(0.62); }
+  12% { opacity: 0.94; }
+  58% { opacity: 0.78; transform: translate3d(var(--dx-mid, 0px), var(--dy-mid, 60px), 0) scale(0.92); }
+  100% { opacity: 0; transform: translate3d(var(--dx, 0px), var(--dy, 100px), 0) scale(0.28); }
 }
 
 /* ── Minimal Scrollbar ── */
@@ -1964,8 +2042,8 @@ body.light-mode .copy-toast {
   }
 
   .profile-photo-wrapper {
-    width: 110px;
-    height: 110px;
+    width: 104px;
+    height: 104px;
   }
 
   .profile-photo-wrapper.photo-expanded {
@@ -2047,8 +2125,8 @@ body.light-mode .copy-toast {
   }
 
   .profile-photo-wrapper {
-    width: 90px;
-    height: 90px;
+    width: 86px;
+    height: 86px;
   }
 
   .profile-photo-wrapper.photo-expanded {
@@ -2218,8 +2296,8 @@ body.light-mode .copy-toast {
   }
 
   .profile-photo-wrapper {
-    width: 75px;
-    height: 75px;
+    width: 72px;
+    height: 72px;
   }
 
   .profile-photo-wrapper.photo-expanded {
@@ -2986,14 +3064,14 @@ body #statusMessage.feature-emphasis {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity 300ms ease, backdrop-filter 360ms cubic-bezier(0.22, 1, 0.36, 1), background-color 360ms ease, visibility 0s linear 300ms;
+  transition: opacity 220ms ease, backdrop-filter 260ms cubic-bezier(0.22, 1, 0.36, 1), background-color 260ms ease, visibility 0s linear 220ms;
 }
 
 .photo-focus-layer.open {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
-  transition: opacity 300ms ease, backdrop-filter 360ms cubic-bezier(0.22, 1, 0.36, 1), background-color 360ms ease;
+  transition: opacity 220ms ease, backdrop-filter 260ms cubic-bezier(0.22, 1, 0.36, 1), background-color 260ms ease;
 }
 
 body.photo-focus-opening,
@@ -3005,8 +3083,8 @@ body.photo-focus-closing {
 body.photo-focus-opening .photo-focus-layer,
 body.photo-focus-active .photo-focus-layer {
   background: rgba(8, 11, 16, 0.62);
-  backdrop-filter: blur(14px) saturate(0.85);
-  -webkit-backdrop-filter: blur(14px) saturate(0.85);
+  backdrop-filter: blur(12px) saturate(0.88);
+  -webkit-backdrop-filter: blur(12px) saturate(0.88);
 }
 
 body.photo-focus-closing .photo-focus-layer {
@@ -3107,8 +3185,8 @@ body.photo-focus-closing .copy-toast {
   border: 2.5px solid rgba(255, 255, 255, 0.92);
   box-shadow: 0 24px 56px rgba(0, 0, 0, 0.58), 0 0 40px rgba(88, 166, 255, 0.1);
   opacity: 0;
-  transform: scale(0.94);
-  transition: opacity 280ms ease, transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
+  transform: scale(0.965);
+  transition: opacity 220ms ease, transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 body.photo-focus-active .photo-focus-image {
@@ -3124,19 +3202,21 @@ body.photo-focus-opening .photo-focus-image {
 .photo-focus-caption {
   color: rgba(255, 255, 255, 0.98);
   font-size: clamp(1.2rem, 0.7vw + 1rem, 1.7rem);
-  font-weight: 600;
-  letter-spacing: 0.022em;
+  font-family: 'Marker Felt', 'Chalkboard SE', 'Comic Sans MS', 'Bradley Hand', cursive;
+  font-weight: 700;
+  letter-spacing: 0.008em;
+  font-style: italic;
   text-align: center;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 280ms ease, transform 340ms cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translateY(7px);
+  transition: opacity 220ms ease, transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 body.photo-focus-active .photo-focus-caption {
   opacity: 1;
   transform: translateY(0);
-  transition-delay: 120ms;
+  transition-delay: 70ms;
 }
 
 body.photo-focus-closing .photo-focus-caption {
@@ -3160,7 +3240,7 @@ body.photo-focus-closing .photo-focus-caption {
   cursor: pointer;
   opacity: 0;
   transform: scale(0.96);
-  transition: opacity 170ms ease, transform 220ms ease, border-color 160ms ease, background-color 160ms ease;
+  transition: opacity 130ms ease, transform 170ms ease, border-color 130ms ease, background-color 130ms ease;
 }
 
 .photo-focus-close:hover {
