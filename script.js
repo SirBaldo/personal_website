@@ -111,6 +111,129 @@ if (reducedMotionQuery.addEventListener) {
 }
 
 // ══════════════════════════════════════════
+// SITE CONTENT CONFIG (cv, profile, projects)
+// ══════════════════════════════════════════
+
+var DEFAULT_SITE_CONTENT = {
+  cv: {
+    path: 'content/cv/current.pdf'
+  },
+  profile: {
+    baseName: 'content/profile/current',
+    extensions: ['jpg', 'jpeg', 'png', 'webp']
+  },
+  projects: [
+    {
+      title: 'Autonomous Guidance Stack',
+      primaryUrl: 'https://github.com/SirBaldo',
+      extras: [
+        { label: 'repo', url: 'https://github.com/SirBaldo' },
+        { label: 'paper', url: 'https://sirbaldo.github.io/' }
+      ]
+    },
+    {
+      title: 'Flight Ops Dashboard',
+      primaryUrl: 'https://github.com/SirBaldo',
+      extras: [
+        { label: 'repo', url: 'https://github.com/SirBaldo' }
+      ]
+    },
+    {
+      title: 'Orbital ML Study',
+      primaryUrl: 'https://sirbaldo.github.io/',
+      extras: [
+        { label: 'paper', url: 'https://sirbaldo.github.io/' }
+      ]
+    }
+  ]
+};
+
+function isNonEmptyString(value) {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function normalizeExtensions(list) {
+  if (!Array.isArray(list)) return [];
+  var unique = {};
+  var normalized = [];
+  list.forEach(function(item) {
+    if (!isNonEmptyString(item)) return;
+    var ext = item.trim().toLowerCase().replace(/^\.+/, '');
+    if (!ext || unique[ext]) return;
+    unique[ext] = true;
+    normalized.push(ext);
+  });
+  return normalized;
+}
+
+function normalizeProjectItem(item) {
+  if (!item || typeof item !== 'object') return null;
+  if (!isNonEmptyString(item.title) || !isNonEmptyString(item.primaryUrl)) return null;
+  var project = {
+    title: item.title.trim(),
+    primaryUrl: item.primaryUrl.trim(),
+    extras: []
+  };
+  if (Array.isArray(item.extras)) {
+    item.extras.forEach(function(extra) {
+      if (!extra || typeof extra !== 'object') return;
+      if (!isNonEmptyString(extra.url)) return;
+      project.extras.push({
+        label: isNonEmptyString(extra.label) ? extra.label.trim() : 'link',
+        url: extra.url.trim()
+      });
+    });
+  }
+  return project;
+}
+
+function normalizeProjects(list) {
+  if (!Array.isArray(list)) return [];
+  var projects = [];
+  list.forEach(function(item) {
+    var normalized = normalizeProjectItem(item);
+    if (normalized) projects.push(normalized);
+  });
+  return projects;
+}
+
+function getSiteContent(raw) {
+  var normalized = {
+    cv: { path: DEFAULT_SITE_CONTENT.cv.path },
+    profile: {
+      baseName: DEFAULT_SITE_CONTENT.profile.baseName,
+      extensions: DEFAULT_SITE_CONTENT.profile.extensions.slice()
+    },
+    projects: DEFAULT_SITE_CONTENT.projects.slice()
+  };
+
+  if (!raw || typeof raw !== 'object') return normalized;
+
+  if (raw.cv && isNonEmptyString(raw.cv.path)) {
+    normalized.cv.path = raw.cv.path.trim();
+  }
+
+  if (raw.profile && typeof raw.profile === 'object') {
+    if (isNonEmptyString(raw.profile.baseName)) {
+      normalized.profile.baseName = raw.profile.baseName.trim();
+    }
+    var profileExtensions = normalizeExtensions(raw.profile.extensions);
+    if (profileExtensions.length) {
+      normalized.profile.extensions = profileExtensions;
+    }
+  }
+
+  var projects = normalizeProjects(raw.projects);
+  if (projects.length) {
+    normalized.projects = projects;
+  }
+
+  return normalized;
+}
+
+var siteContent = getSiteContent(window.SITE_CONTENT);
+
+// ══════════════════════════════════════════
 // PROFILE PHOTO EXPAND
 // ══════════════════════════════════════════
 
@@ -145,6 +268,110 @@ if (coarsePointerQuery.addEventListener) {
     isCoarsePointer = e.matches;
   });
 }
+
+function applyCvLinks() {
+  var cvPath = siteContent.cv.path;
+  var topCvLink = document.getElementById('topCvLink');
+  var socialCvLink = document.getElementById('socialCvLink');
+  [topCvLink, socialCvLink].forEach(function(link) {
+    if (!link) return;
+    link.setAttribute('href', cvPath);
+    link.setAttribute('download', '');
+  });
+  if (typeof urls === 'object' && urls) {
+    urls.cv = cvPath;
+  }
+}
+
+function renderProjects() {
+  var projectList = document.getElementById('projectList');
+  if (!projectList) return;
+  if (!Array.isArray(siteContent.projects) || siteContent.projects.length === 0) return;
+
+  projectList.innerHTML = '';
+  siteContent.projects.forEach(function(project) {
+    var li = document.createElement('li');
+
+    var primary = document.createElement('a');
+    primary.className = 'project-primary-link';
+    primary.href = project.primaryUrl;
+    primary.target = '_blank';
+    primary.rel = 'noopener noreferrer';
+    primary.textContent = project.title;
+    li.appendChild(primary);
+
+    if (Array.isArray(project.extras) && project.extras.length) {
+      var extrasWrap = document.createElement('span');
+      extrasWrap.className = 'project-extra-links';
+
+      project.extras.forEach(function(extra, index) {
+        if (index > 0) {
+          var sep = document.createElement('span');
+          sep.className = 'project-extra-sep';
+          sep.textContent = '|';
+          extrasWrap.appendChild(sep);
+        }
+        var extraLink = document.createElement('a');
+        extraLink.href = extra.url;
+        extraLink.target = '_blank';
+        extraLink.rel = 'noopener noreferrer';
+        extraLink.textContent = extra.label;
+        extrasWrap.appendChild(extraLink);
+      });
+
+      li.appendChild(extrasWrap);
+    }
+
+    projectList.appendChild(li);
+  });
+}
+
+function resolveProfileImage() {
+  if (!profilePhotoElement) return;
+  var profile = siteContent.profile || DEFAULT_SITE_CONTENT.profile;
+  var baseName = isNonEmptyString(profile.baseName) ? profile.baseName.trim() : DEFAULT_SITE_CONTENT.profile.baseName;
+  var extensions = normalizeExtensions(profile.extensions);
+  if (!extensions.length) {
+    extensions = DEFAULT_SITE_CONTENT.profile.extensions.slice();
+  }
+
+  var unique = {};
+  var candidates = [];
+
+  function addCandidate(src) {
+    if (!isNonEmptyString(src)) return;
+    var normalized = src.trim();
+    if (unique[normalized]) return;
+    unique[normalized] = true;
+    candidates.push(normalized);
+  }
+
+  extensions.forEach(function(ext) {
+    addCandidate(baseName + '.' + ext);
+  });
+
+  addCandidate(profilePhotoElement.getAttribute('src'));
+
+  function tryCandidate(index) {
+    if (index >= candidates.length) return;
+    var candidate = candidates[index];
+    var probe = new Image();
+    probe.onload = function() {
+      profilePhotoElement.src = candidate;
+      if (photoFocusImage) photoFocusImage.src = candidate;
+    };
+    probe.onerror = function() {
+      tryCandidate(index + 1);
+    };
+    probe.src = candidate;
+  }
+
+  tryCandidate(0);
+}
+
+renderProjects();
+resolveProfileImage();
+applyCvLinks();
 
 function isPhotoFocusOpen() {
   return photoFocusState !== 'closed';
@@ -2002,7 +2229,7 @@ var commands = document.querySelectorAll('.command-item');
 var selectedIndex = 0;
 
 var urls = {
-  cv: 'Baldan_Resume_update.pdf',
+  cv: siteContent.cv.path,
   linkedin: 'https://www.linkedin.com/in/fbaldan/',
   github: 'https://github.com/SirBaldo'
 };
