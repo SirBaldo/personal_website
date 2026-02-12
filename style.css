@@ -321,6 +321,9 @@ h1 {
   flex-direction: column;
   align-items: center;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
 }
 
 .profile-photo {
